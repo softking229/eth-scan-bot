@@ -1,6 +1,15 @@
 import fetch from "node-fetch"
 import hex2dec from 'hex2dec'
+import fs from 'fs-extra'
+import abiDecoder from 'abi-decoder'
 
+const abi = fs.readJsonSync("abi.json");
+const paramData = fs.readFileSync("data.txt", "utf-8");
+abiDecoder.addABI(abi);
+const buyCallData = abiDecoder.decodeMethod(paramData).params[3]['value'];
+const token_number = buyCallData.substr(buyCallData.length - 64);
+
+console.log(token_number);
 
 var get_transaction_history = async() => {
     console.log('checking', new Date());
