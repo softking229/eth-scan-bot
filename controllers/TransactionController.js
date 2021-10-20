@@ -99,7 +99,7 @@ export const fetch_transactions = async(params, wallet) => {
             tx_result.type = wallet == tx_result.from ? 'sell' : 'buy',
             tx_results.push(tx_result);
     
-            console.log(tx_result.transactionHash, tx_result.value / (10 ** 18));
+            console.log(tx_result.transactionHash, tx_result.value);
         })        
     )
     return tx_results;
