@@ -26,7 +26,12 @@ var get_token_info = async (input) => {
                 offset: 0,
                 limit: 1
         }})
-        return {address, id, name: info.name, link: info.permalink};
+        return {
+            address, 
+            id, 
+            name: info.name, 
+            link: `https://etherscan.io/token/${address}?a=${id}`
+        };
     } catch(err) {
         return 0;
     }
