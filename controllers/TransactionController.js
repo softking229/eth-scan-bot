@@ -6,7 +6,7 @@ import { etherscan_apikeys, opensea_api } from '../consts.js'
 
 const Timer = util.promisify(setTimeout);
 
-const max_api_calls = 5;
+const max_api_calls = 4;
 global.current_api_calls = (new Array(etherscan_apikeys.length)).fill(0);
 console.log("Current API calls", global.current_api_calls);
 
@@ -76,7 +76,7 @@ export const fetch_transactions = async(params, wallet) => {
     var tx_results = [];
     await Promise.all(
         nft_tx_list.map( async (nft_tx, idx) => {
-            await Timer((idx / max_api_calls) * 15);
+            await Timer((idx / max_api_calls) * 20);
 
             let nft_tx_details;
             while(true) {
