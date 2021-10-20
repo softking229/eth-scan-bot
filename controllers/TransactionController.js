@@ -89,10 +89,10 @@ export const fetch_transactions = async(params, wallet) => {
                     endblock: nft_tx.blockNumber,
                     apikey: API_KEY
                 }})
-                
+
                 nft_tx_details = result
             
-                if( nft_tx_details ){
+                if( nft_tx_details.find ){
                     break;
                 }
                 console.log(nft_tx_details, API_KEY);
