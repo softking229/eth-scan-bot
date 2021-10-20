@@ -72,7 +72,7 @@ export const fetch_transactions = async(params, wallet) => {
     var tx_results = [];
     await Promise.all(
         nft_tx_list.map( async (nft_tx, idx) => {
-            await Timer(idx * 15);
+            await Timer(idx * 2);
             const API_KEY = await wait_api_call_limit();
             const { data: {result: nft_tx_details}} = await axios.get(API_URL, {params: {
                 module: 'account',
