@@ -94,7 +94,7 @@ export const fetch_transactions = async(params, wallet) => {
                 to: "0x"+nft_tx.topics[1].substr(26),
                 token,
                 value: converter.hexToDec(nft_tx.data.substr(130)) / (10 ** 18),
-                timestamp: converter.hexToDec(nft_tx.timeStamp)
+                timestamp: converter.hexToDec(nft_tx.timeStamp) * 1000
             }
             tx_result.type = wallet == tx_result.from ? 'sell' : 'buy',
             tx_results.push(tx_result);
