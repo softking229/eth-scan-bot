@@ -88,7 +88,7 @@ export const fetch_transactions = async(params, wallet) => {
             }})
             
             if( !nft_tx_details || !nft_tx_details.find ){
-                console.log(nft_tx_details);
+                console.log(nft_tx_details, API_KEY);
                 return;
             }
             
