@@ -103,16 +103,3 @@ export const fetch_transactions = async(params, wallet) => {
     )
     return tx_results;
 };
-
-
-
-export const format_transaction = async (tx_list, wallet) => {
-    return tx_list.map(tx => {
-        const tx_new = Object.assign(tx, {
-            type: wallet == tx.from ? 'sell' : 'buy',
-            tokenName: "TOKEN NAME HERE",
-            link: `opensea.io/assets/${tx.token.address}/${tx.token.id}`
-        })
-        return tx_new
-    })
-}
