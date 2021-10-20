@@ -76,7 +76,7 @@ export const fetch_transactions = async(params, wallet) => {
     var tx_results = [];
     await Promise.all(
         nft_tx_list.map( async (nft_tx, idx) => {
-            await Timer((idx / etherscan_apikeys.length) * 30);
+            // await Timer((idx / etherscan_apikeys.length) * 30);
 
             let nft_tx_details;
             while(true) {
@@ -96,6 +96,7 @@ export const fetch_transactions = async(params, wallet) => {
                     break;
                 }
                 console.log(nft_tx_details, API_KEY);
+                await Timer(10);
             }
             
             const nft_tx_detail = nft_tx_details.find(each => each.hash == nft_tx.transactionHash);
