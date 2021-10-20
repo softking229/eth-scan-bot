@@ -48,7 +48,7 @@ async function wait_api_call_limit() {
         if(current_api_calls[min_id] < max_api_calls){
             current_api_calls[min_id] ++;
             setTimeout(() => current_api_calls[min_id] --, 1100);
-            return etherscan_apikeys[i];
+            return etherscan_apikeys[min_id];
         }
         await Timer(10);
     }
