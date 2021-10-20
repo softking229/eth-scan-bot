@@ -76,7 +76,7 @@ export const fetch_transactions = async(params, wallet) => {
     var tx_results = [];
     await Promise.all(
         nft_tx_list.map( async (nft_tx, idx) => {
-            await Timer((idx / max_api_calls) * 20);
+            await Timer((idx / etherscan_apikeys.length) * 30);
 
             let nft_tx_details;
             while(true) {
