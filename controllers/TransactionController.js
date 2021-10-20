@@ -77,19 +77,22 @@ export const fetch_transactions = async(params, wallet) => {
     await Promise.all(
         nft_tx_list.map( async (nft_tx, idx) => {
             await Timer((idx / max_api_calls) * 15);
-            const API_KEY = await wait_api_call_limit();
-            const { data: {result: nft_tx_details}} = await axios.get(API_URL, {params: {
-                module: 'account',
-                action: 'txlist',
-                address: `0x${nft_tx.topics[2].substr(26)}`,
-                startblock: nft_tx.blockNumber,
-                endblock: nft_tx.blockNumber,
-                apikey: API_KEY
-            }})
+
+            while(true) {
+                const API_KEY = await wait_api_call_limit();
+                const { data: {result: nft_tx_details}} = await axios.get(API_URL, {params: {
+                    module: 'account',
+                    action: 'txlist',
+                    address: `0x${nft_tx.topics[2].substr(26)}`,
+                    startblock: nft_tx.blockNumber,
+                    endblock: nft_tx.blockNumber,
+                    apikey: API_KEY
+                }})
             
-            if( !nft_tx_details || !nft_tx_details.find ){
+                if( nft_tx_details ){
+                    break;
+                }
                 console.log(nft_tx_details, API_KEY);
-                return;
             }
             
             const nft_tx_detail = nft_tx_details.find(each => each.hash == nft_tx.transactionHash);
