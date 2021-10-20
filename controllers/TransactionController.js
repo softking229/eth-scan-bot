@@ -2,33 +2,46 @@ import axios from 'axios'
 import converter from 'hex2dec'
 import abiDecoder from '../utils/abi-decoder.js'
 import util from 'util'
+import { etherscan_apikeys, opensea_api } from '../consts.js'
 
 const Timer = util.promisify(setTimeout);
 
 const max_api_calls = 5;
-let current_api_calls = 0;
+global.current_api_calls = (new Array(etherscan_apikeys.length)).fill(0);
 
-var get_token_number = (input) => {
+var get_token_info = async (input) => {
     try{
-        const buyCallData = abiDecoder.decodeMethod(input).params[3]['value'];
-        const token_number = buyCallData.substr(buyCallData.length - 64);
-        return token_number;
+        const params = abiDecoder.decodeMethod(input).params;
+        const buyCallData = params[3]['value'];
+        const id = converter.hexToDec(buyCallData.substr(buyCallData.length - 64));
+        const address = params[0]['value'][4];
+        const {data: {assets: [info]}} = await axios.get(opensea_api + '/v1/assets', { 
+            headers: {
+                'X-API-KEY': process.env.OPENSEA_API_KEY
+            },
+            params: {
+                asset_contract_address: address,
+                token_ids: id,
+                offset: 0,
+                limit: 1
+        }})
+        return {address, id, name: info.name, link: info.permalink};
     } catch(err) {
         return 0;
     }
 }
 
 async function wait_api_call_limit() {
-    console.log("current_api_calls", current_api_calls);
-    while(current_api_calls >= max_api_calls) {
-        await Timer(50);
+    while(true){
+        for(let i = 0; i < current_api_calls.length; i++) {
+            if(current_api_calls[i] < max_api_calls){
+                current_api_calls[i] ++;
+                setTimeout(() => current_api_calls[i] --, 1200);
+                return etherscan_apikeys[i];
+            }
+        }
+        await Timer(10);
     }
-}
-
-async function new_api_call() {
-    current_api_calls ++;
-    await Timer(1000);
-    current_api_calls --;
 }
 
 axios.interceptors.request.use( request => {
@@ -38,14 +51,11 @@ axios.interceptors.request.use( request => {
     return request;
 })
 
-export const fetch_transactions = async(params) => {
+export const fetch_transactions = async(params, wallet) => {
     const API_URL = process.env.API_URL;
-    const API_KEY = process.env.API_KEY;
-
+    
+    const API_KEY = await wait_api_call_limit();
     Object.assign(params, {apikey: API_KEY});    
-
-    await wait_api_call_limit();
-    new_api_call();
     const { data: {result: nft_tx_list, status: status }} = await axios.get(API_URL, {params});
     
     if( status != "1")
@@ -56,9 +66,8 @@ export const fetch_transactions = async(params) => {
     var tx_results = [];
     await Promise.all(
         nft_tx_list.map( async (nft_tx, idx) => {
-            await Timer(50 + idx * 100);
-            await wait_api_call_limit();
-            new_api_call();
+            await Timer(idx * 5);
+            const API_KEY = await wait_api_call_limit();
             const { data: {result: nft_tx_details}} = await axios.get(API_URL, {params: {
                 module: 'account',
                 action: 'txlist',
@@ -76,16 +85,17 @@ export const fetch_transactions = async(params) => {
             const nft_tx_detail = nft_tx_details.find(each => each.hash == nft_tx.transactionHash);
             if(!nft_tx_detail) return;
     
-            const tokenNumber = get_token_number(nft_tx_detail.input);
+            const token = get_token_info(nft_tx_detail.input);
             const tx_result = {
                 blockNumber: nft_tx.blockNumber,
                 transactionHash: nft_tx.transactionHash,
                 from: "0x"+nft_tx.topics[2].substr(26),
                 to: "0x"+nft_tx.topics[1].substr(26),
-                tokenNumber: converter.hexToDec(tokenNumber),
+                token,
                 value: converter.hexToDec(nft_tx.data.substr(130)),
                 timeStamp: nft_tx.timeStamp
             }
+            tx_result.type = wallet == tx_result.from ? 'sell' : 'buy',
             tx_results.push(tx_result);
     
             console.log(tx_result.transactionHash, tx_result.value / (10 ** 18));
@@ -93,3 +103,16 @@ export const fetch_transactions = async(params) => {
     )
     return tx_results;
 };
+
+
+
+export const format_transaction = async (tx_list, wallet) => {
+    return tx_list.map(tx => {
+        const tx_new = Object.assign(tx, {
+            type: wallet == tx.from ? 'sell' : 'buy',
+            tokenName: "TOKEN NAME HERE",
+            link: `opensea.io/assets/${tx.token.address}/${tx.token.id}`
+        })
+        return tx_new
+    })
+}

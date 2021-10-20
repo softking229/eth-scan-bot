@@ -1,12 +1,13 @@
 import express from 'express'
 import { opensea_address, topic_orders_matched } from '../consts.js';
-import { fetch_transactions } from '../controllers/TransactionController.js';
+import { fetch_transactions, format_transaction } from '../controllers/TransactionController.js';
 
 const router = express.Router();
 
 // find transaction logs with one's wallet address
 router.get('/api/wallet-watch/:wallet_address', async (req, resp) => {
-    let wallet_address = `0x${"0".repeat(24)}${req.params.wallet_address.substr(2)}`;
+    const wallet = req.params.wallet_address;
+    let wallet_address = `0x${"0".repeat(24)}${wallet.substr(2)}`;
     let params = {
         module: "logs",
         action: "getLogs",
@@ -16,11 +17,11 @@ router.get('/api/wallet-watch/:wallet_address', async (req, resp) => {
         fromBlock: 0,
         toBlock: 'latest',
     };
-    let tx_buy = await fetch_transactions(params);
+    let tx_buy = await fetch_transactions(params, wallet);
     delete params.topic1;
     params.topic2 = wallet_address;
-    let tx_sell = await fetch_transactions(params);
-    resp.json(tx_buy.concat(tx_sell));
+    let tx_sell = await fetch_transactions(params, wallet);
+    resp.json(tx_buy.concat(tx_sell), wallet);
 });
 
 export default router;
