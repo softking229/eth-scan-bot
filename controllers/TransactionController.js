@@ -78,9 +78,10 @@ export const fetch_transactions = async(params, wallet) => {
         nft_tx_list.map( async (nft_tx, idx) => {
             await Timer((idx / max_api_calls) * 15);
 
+            let nft_tx_details;
             while(true) {
                 const API_KEY = await wait_api_call_limit();
-                const { data: {result: nft_tx_details}} = await axios.get(API_URL, {params: {
+                const { data: {result}} = await axios.get(API_URL, {params: {
                     module: 'account',
                     action: 'txlist',
                     address: `0x${nft_tx.topics[2].substr(26)}`,
@@ -88,6 +89,8 @@ export const fetch_transactions = async(params, wallet) => {
                     endblock: nft_tx.blockNumber,
                     apikey: API_KEY
                 }})
+                
+                nft_tx_details = result
             
                 if( nft_tx_details ){
                     break;
