@@ -16,9 +16,9 @@ var get_token_info = async (input) => {
         const id = converter.hexToDec(buyCallData.substr(buyCallData.length - 64));
         const address = params[0]['value'][4];
         const {data: {assets: [info]}} = await axios.get(opensea_api + '/v1/assets', { 
-            headers: {
-                'X-API-KEY': process.env.OPENSEA_API_KEY
-            },
+            // headers: {
+            //     'X-API-KEY': process.env.OPENSEA_API_KEY
+            // },
             params: {
                 asset_contract_address: address,
                 token_ids: id,
@@ -85,7 +85,7 @@ export const fetch_transactions = async(params, wallet) => {
             const nft_tx_detail = nft_tx_details.find(each => each.hash == nft_tx.transactionHash);
             if(!nft_tx_detail) return;
     
-            const token = get_token_info(nft_tx_detail.input);
+            const token = await get_token_info(nft_tx_detail.input);
             const tx_result = {
                 blockNumber: nft_tx.blockNumber,
                 transactionHash: nft_tx.transactionHash,

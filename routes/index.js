@@ -1,6 +1,6 @@
 import express from 'express'
 import { opensea_address, topic_orders_matched } from '../consts.js';
-import { fetch_transactions, format_transaction } from '../controllers/TransactionController.js';
+import { fetch_transactions } from '../controllers/TransactionController.js';
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ router.get('/api/wallet-watch/:wallet_address', async (req, resp) => {
     delete params.topic1;
     params.topic2 = wallet_address;
     let tx_sell = await fetch_transactions(params, wallet);
-    resp.json(tx_buy.concat(tx_sell), wallet);
+    resp.json(tx_buy.concat(tx_sell));
 });
 
 export default router;
