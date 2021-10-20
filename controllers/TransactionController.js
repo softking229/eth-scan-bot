@@ -39,12 +39,16 @@ var get_token_info = async (input) => {
 
 async function wait_api_call_limit() {
     while(true){
-        for(let i = 0; i < current_api_calls.length; i++) {
-            if(current_api_calls[i] < max_api_calls){
-                current_api_calls[i] ++;
-                setTimeout(() => current_api_calls[i] --, 1200);
-                return etherscan_apikeys[i];
+        let min_id = 0;
+        for(let i = 1; i < current_api_calls.length; i++) {
+            if(current_api_calls[i] < current_api_calls[min_id]){
+                min_id = i;
             }
+        }
+        if(current_api_calls[min_id] < max_api_calls){
+            current_api_calls[min_id] ++;
+            setTimeout(() => current_api_calls[min_id] --, 1100);
+            return etherscan_apikeys[i];
         }
         await Timer(10);
     }
