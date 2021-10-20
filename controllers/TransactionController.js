@@ -7,7 +7,7 @@ import { etherscan_apikeys, opensea_api } from '../consts.js'
 const Timer = util.promisify(setTimeout);
 
 const max_api_calls = 5;
-console.log("Current API calls", current_api_calls);
+console.log("Current API calls", global.current_api_calls);
 global.current_api_calls = (new Array(etherscan_apikeys.length)).fill(0);
 
 var get_token_info = async (input) => {
