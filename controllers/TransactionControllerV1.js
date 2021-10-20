@@ -64,60 +64,55 @@ axios.interceptors.request.use( request => {
 export const fetch_transactions = async(params, wallet) => {
     const API_URL = process.env.API_URL;
     
-    const API_KEY1 = await wait_api_call_limit();
-    Object.assign(params, {apikey: API_KEY1});    
-
+    const API_KEY = await wait_api_call_limit();
+    Object.assign(params, {apikey: API_KEY});    
+    const { data: {result: nft_tx_list, status: status }} = await axios.get(API_URL, {params});
     
-    const API_KEY2 = await wait_api_call_limit();
-
-    const params_all = {
-        module: "account",
-        action: "tokennfttx",
-        address: wallet,
-        startblock: 0,
-        endblock: 999999999,
-        sort: "desc",
-        apikey: API_KEY2
-    }
-
-    let wallet_address = `0x${"0".repeat(24)}${wallet.substr(2)}`;
-
-    const [
-        { data: {result: opensea_nft_tx_list1, status }},
-        { data: {result: opensea_nft_tx_list2 }},
-        { data: {result: all_nft_tx_list }}
-     ] = await Promise.all([
-         axios.get(API_URL, {params: {...params, topic1: wallet_address}}),
-         axios.get(API_URL, {params: {...params, topic2: wallet_address}}),
-         axios.get(API_URL, {params: params_all})
-     ]);
-    
-    const opensea_nft_tx_list = opensea_nft_tx_list1.concat(opensea_nft_tx_list2);
-
     if( status != "1")
         return [];
 
-    console.log("total nft tx count", all_nft_tx_list.length, opensea_nft_tx_list.length);
+    console.log("total nft tx count", nft_tx_list.length);
         
     var tx_results = [];
     await Promise.all(
-        all_nft_tx_list.map( async (nft_tx, idx) => {
-            
-            let nft_tx_detail = opensea_nft_tx_list.find(each => nft_tx.hash == each.transactionHash);
+        nft_tx_list.map( async (nft_tx, idx) => {
+            await Timer((idx / etherscan_apikeys.length) * 20);
 
-            if(nft_tx.from == "0x0000000000000000000000000000000000000000") nft_tx_detail = 0;
-            else if(!nft_tx_detail) return;
+            let nft_tx_details;
+            while(true) {
+                const API_KEY = await wait_api_call_limit();
+                const { data: {result}} = await axios.get(API_URL, {params: {
+                    module: 'account',
+                    action: 'txlist',
+                    address: `0x${nft_tx.topics[2].substr(26)}`,
+                    startblock: nft_tx.blockNumber,
+                    endblock: nft_tx.blockNumber,
+                    apikey: API_KEY
+                }})
+
+                nft_tx_details = result
+            
+                if( nft_tx_details && nft_tx_details.find ){
+                    break;
+                }
+                console.log(nft_tx_details, API_KEY);
+                await Timer(10);
+            }
+            
+            const nft_tx_detail = nft_tx_details.find(each => each.hash == nft_tx.transactionHash);
+            if(!nft_tx_detail) return;
     
+            const token = await get_token_info(nft_tx_detail.input);
             const tx_result = {
                 blockNumber: nft_tx.blockNumber,
-                transactionHash: nft_tx.hash,
-                from: nft_tx.from,
-                to: nft_tx.to,
-                token: {id: nft_tx.tokenID, name: nft_tx.tokenName, },
-                value: nft_tx_detail.data ? converter.hexToDec(nft_tx_detail.data.substr(130)) / (10 ** 18) : "",
+                transactionHash: nft_tx.transactionHash,
+                from: "0x"+nft_tx.topics[2].substr(26),
+                to: "0x"+nft_tx.topics[1].substr(26),
+                token,
+                value: converter.hexToDec(nft_tx.data.substr(130)) / (10 ** 18),
                 timestamp: converter.hexToDec(nft_tx.timeStamp) * 1000
             }
-            tx_result.type = !nft_tx_detail ? 'mint' : (wallet == tx_result.from ? 'sell' : 'buy'),
+            tx_result.type = wallet == tx_result.from ? 'sell' : 'buy',
             tx_results.push(tx_result);
     
             console.log(tx_result.transactionHash, tx_result.value);
