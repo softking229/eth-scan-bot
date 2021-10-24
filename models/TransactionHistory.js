@@ -11,7 +11,9 @@ var TransactionHistoryModelSchema = new Schema({
     tokenName: String,
     value: Number,
     timestamp: Number,
-    type: String
+    type: String,
+    gasPrice: Number,
+    gasUsed: Number
 });
 
 // Compile model from schema

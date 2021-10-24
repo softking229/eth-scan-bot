@@ -43,7 +43,7 @@ var get_token_info = async (input) => {
     }
 }
 
-async function wait_api_call_limit() {
+export const wait_api_call_limit = async() => {
     while(true){
         let min_id = 0;
         for(let i = 1; i < current_api_calls.length; i++) {
@@ -145,71 +145,42 @@ export const addWalletInfoToWatchList = async(params) => {
     }
 }
 
-export const fetch_transactions = async(params) => {
-    let start = window.performance.now();
-    const API_URL = process.env.API_URL;
-    const API_KEY = await wait_api_call_limit();
-    let last_scrapped_block = params.fromBlock * 1;
-    const origin_from_block = last_scrapped_block;
-    let transaction_count = 0;
-    Object.assign(params, {apikey: API_KEY});
-    let opensea_nft_tx_list;
-    while(true) {
-        params.fromBlock = last_scrapped_block;
-        while( true) {
-            try{
-                let result = await axios.get(API_URL, {params}).catch(err => {
-                    throw err;
-                });
-                opensea_nft_tx_list = result.data.result;
-                break;
-            } catch(err) {
-                console.log("Please check your network");
-            }
+export const addTransaction = async(transaction) => {
+    try {
+        await TransactionHistory.create(transaction);
+        let promise_array;
+        if( transaction.type != "trade") {
+            promise_array = [
+                addWalletInfoToWatchList({
+                    address: transaction.from,
+                    spent: 0,
+                    revenue: transaction.value,
+                    nfts_bought: 0,
+                    nfts_sold: 1,
+                    mint: 0
+                }),
+                addWalletInfoToWatchList({
+                    address: transaction.to,
+                    spent: transaction.value,
+                    revenue: 0,
+                    nfts_bought: 1,
+                    nfts_sold: 0,
+                    mint: 0
+                })];
+        } else {
+            promise_array = [
+                addWalletInfoToWatchList({
+                    address: transaction.from,
+                    spent: 0,
+                    revenue: transaction.value,
+                    nfts_bought: 0,
+                    nfts_sold: 1,
+                    mint: 1
+                })];
         }
-        for(const opensea_nft_tx of opensea_nft_tx_list) {
-            let transaction = {
-                transactionHash: opensea_nft_tx.transactionHash,
-                blockNumber: opensea_nft_tx.blockNumber,
-                from: `0x${opensea_nft_tx.topics[2].substr(26)}`,
-                to: `0x${opensea_nft_tx.topics[1].substr(26)}`,
-                value: converter.hexToDec(opensea_nft_tx.data.substr(130)) / (10^18),
-                timestamp: converter.hexToDec(opensea_nft_tx.timeStamp) * 1000,
-                type: "trade"
-            };
-            try {
-                await TransactionHistory.create(transaction);
-                await Promise.all([
-                    addWalletInfoToWatchList({
-                        address: transaction.from,
-                        spent: 0,
-                        revenue: transaction.value,
-                        nfts_bought: 0,
-                        nfts_sold: 1,
-                    }),
-                    addWalletInfoToWatchList({
-                        address: transaction.to,
-                        spent: transaction.value,
-                        revenue: 0,
-                        nfts_bought: 1,
-                        nfts_sold: 0,
-                    })
-                ]);
-            } catch (error) {}
-        }
-        last_scrapped_block = opensea_nft_tx_list.length?converter.hexToDec(opensea_nft_tx_list[opensea_nft_tx_list.length-1].blockNumber):last_scrapped_block;
-        transaction_count +=opensea_nft_tx_list.length;
-        if( opensea_nft_tx_list.length < 1000)
-            break;
-    }
-    let end = window.performance.now();
-    console.log(`Execution time: ${end - start} ms`);
-    return {
-        fromBlock: origin_from_block,
-        count: transaction_count,
-        toBlock: params.toBlock
-    };
-};
+        await Promise.all(promise_array);
+    } catch (error) {}
+}
 
 export const getOnchainLatestBlocknumber = async() => {
     while(true) {

@@ -15,6 +15,7 @@ var WatchListModelSchema = new Schema({
     revenue: Number,
     nfts_bought: Number,
     nfts_sold: Number,
+    mint: Number,
     collections_bought: Number,
     collections_sold: Number
 });
