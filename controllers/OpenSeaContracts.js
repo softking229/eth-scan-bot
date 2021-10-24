@@ -11,6 +11,7 @@ import util from 'util'
 import { JSDOM } from "jsdom"
 const { window } = new JSDOM()
 const Timer = util.promisify(setTimeout);
+
 export const checkDeviceInfo = async() => {
     let device_info = fs.readJsonSync("device_info.json");
     if( device_info.number == 0) {
@@ -153,43 +154,6 @@ export const getOpenSeaLogs = async() => {
             }
             else if( toBlock >= fromBlock + 100 - 1)
                 toBlock = fromBlock + 100 - 1;
-            // if( !mod){
-            //     fromBlock = downingTopBlockRange.length
-            //                 ?(downingTopBlockRange[0].toBlock < latestBlock
-            //                     ?downingTopBlockRange[0].toBlock + 1
-            //                     :(upingTopBlockRange.length
-            //                         ?upingTopBlockRange[0].toBlock + 1
-            //                         :opensea_origin_start_block))
-            //                 :(upingTopBlockRange.length
-            //                     ?upingTopBlockRange[0].toBlock + 1
-            //                     :opensea_origin_start_block);
-            //     toBlock = downingTopBlockRange.length
-            //                 ?(downingTopBlockRange[0].toBlock<latestBlock
-            //                     ?latestBlock
-            //                     :downingBottomBlockRange[0].fromBlock - 1)
-            //                 :latestBlock;
-            //     if( fromBlock <= toBlock - 100)
-            //         fromBlock = toBlock - 100 + 1;
-            // } else {
-            //     fromBlock = upingTopBlockRange.length
-            //                     ?(!downingBottomBlockRange.length
-            //                         ?upingTopBlockRange[0].toBlock + 1
-            //                         :(downingBottomBlockRange[0].fromBlock<=upingTopBlockRange[0].toBlock
-            //                             ?downingTopBlockRange[0].toBlock + 1
-            //                             :upingTopBlockRange[0].toBlock + 1))
-            //                     :(downingBottomBlockRange.length
-            //                         ?(downingBottomBlockRange[0].fromBlock <= opensea_origin_start_block
-            //                             ?downingTopBlockRange[0].toBlock + 1
-            //                             :opensea_origin_start_block)
-            //                         :opensea_origin_start_block);
-            //     toBlock = downingBottomBlockRange.length
-            //                     ?(downingBottomBlockRange[0].fromBlock <= opensea_origin_start_block
-            //                         ?latestBlock
-            //                         :downingBottomBlockRange[0].fromBlock - 1)
-            //                     :latestBlock;
-            //     if( toBlock >= fromBlock + 100 - 1)
-            //         toBlock = fromBlock + 100 - 1;
-            // }
             if ( fromBlock > toBlock) {
                 await Timer(1000);
                 continue;
