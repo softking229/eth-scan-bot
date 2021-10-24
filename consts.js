@@ -18,3 +18,4 @@ export const etherscan_apikeys = [
     '9UWFM4FZNZKTT35FQWX46SGRIT6DR38A4S',
 ]
 export const opensea_api = 'https://api.opensea.io/api'
+export const opensea_origin_start_block = 5779378;

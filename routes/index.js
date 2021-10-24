@@ -1,6 +1,6 @@
 import express from 'express'
 import { opensea_address, topic_orders_matched } from '../consts.js';
-import { fetch_transactions } from '../controllers/TransactionController.js';
+import { fetch_wallet_transactions } from '../controllers/TransactionController.js';
 import WatchList from "../Models/WatchList.js";
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.get('/api/wallet-watch/:wallet_address', async (req, resp) => {
         fromBlock: 0,
         toBlock: 'latest',
     };
-    let tx_list = await fetch_transactions(params, wallet);
+    let tx_list = await fetch_wallet_transactions(params, wallet);
     resp.json(tx_list);
 });
 
