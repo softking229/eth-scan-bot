@@ -6,6 +6,8 @@ import { etherscan_apikeys, opensea_api } from '../consts.js'
 import TransactionHistory from '../models/TransactionHistory.js'
 import WatchList from '../Models/WatchList.js'
 import { JSDOM } from "jsdom"
+import mongoose from 'mongoose'
+import OnChainInfo from '../Models/OnChainInfo.js'
 const { window } = new JSDOM()
 
 const Timer = util.promisify(setTimeout);
@@ -208,3 +210,34 @@ export const fetch_transactions = async(params) => {
         toBlock: params.toBlock
     };
 };
+
+export const getOnchainLatestBlocknumber = async() => {
+    while(true) {
+        await fetch_latest_blocknumber();
+        await Timer(5000);
+    }
+}
+
+export const fetch_latest_blocknumber = async() => {
+    const API_URL = process.env.API_URL;
+    const params = {
+        module: "proxy",
+        action: "eth_blockNumber"
+    }
+    let latest_onchain_blocknumber;
+    while(true) {
+        try{
+            let result = await axios( API_URL, {params}).catch(err => {
+                throw err;
+            });
+            latest_onchain_blocknumber = result.data.result;
+            break;
+        } catch(err) {
+            console.log("Please check your network");
+        }
+    }
+    let result = await OnChainInfo.findOne({});
+    result.lastBlock = latest_onchain_blocknumber;
+    await result.save();
+    return latest_onchain_blocknumber;
+}
