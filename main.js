@@ -36,14 +36,16 @@ getNFTCollectionList();
 getLogsByNFTCollection();
 getOpenSeaLogs();
 
-// // Setup Express
-// const app = express();
-// const PORT = process.env.PORT || 80;
+if( global.deviceNumber == 1) {
+    // Setup Express
+    const app = express();
+    const PORT = process.env.PORT || 3000;
 
-// // Express Logger Middleware
-// app.use(morgan('combined'));
-// app.use('/', routes);
+    // Express Logger Middleware
+    app.use(morgan('combined'));
+    app.use('/', routes);
 
-// app.listen(PORT, () => {
-//     console.log(`app listening at http://localhost:${PORT}`)
-// });
+    app.listen(PORT, () => {
+        console.log(`app listening at http://localhost:${PORT}`)
+    });
+}

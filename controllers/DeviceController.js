@@ -4,7 +4,7 @@ export const getTotalDevices = async() => {
     const result = await OpenSeaDeviceInfo.find({}).sort({LastDeviceNumber: -1}).limit(1);
     if( !result.length)
         return 0;
-    return result[0].lastDeviceNumber;
+    return result[0].LastDeviceNumber;
 }
 
 export const checkDeviceInfo = async() => {

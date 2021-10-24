@@ -21,35 +21,63 @@ router.get('/api/wallet-watch/:wallet_address', async (req, resp) => {
 });
 
 router.get('/api/profit-leaders', async ( req, resp) => {
+    let addFields = {
+        "$addFields": {
+            "total_profit": {
+                "$subtract": [
+                    "$revenue", "$spent"
+                ]
+            },
+            "profit": {
+                "$cond": [
+                    { "$eq": [ "$spent", 0 ] },
+                    0,
+                    {
+                        "$multiply": [
+                            {
+                                "$divide": [
+                                    {
+                                        "$subtract": [
+                                            "$revenue", "$spent"
+                                        ]
+                                    }, "$spent"
+                                ]
+                            },
+                            100
+                        ]
+                    }
+                ]
+            }
+        }
+    };
     let sortField = req.query.sortField;
     let sortBy = req.query.sortBy;
     let page = req.query.page;
-    let offset = 2;
+    let offset = 10;
     let sortQuery;
-    let query = WatchList.find({});
     page = (page===undefined?1:page*1);
     sortBy = (sortBy=="asc"?1:-1);
     let skip = (page - 1) * offset;
     switch(sortField) {
-    case "Profit":
+    case "profit":
         sortQuery = { profit: sortBy};
         break;
-    case "Spent":
+    case "spent":
         sortQuery = { spent: sortBy};
         break;
-    case "Revenue":
+    case "revenue":
         sortQuery = { revenue: sortBy};
         break;
-    case "NFTs Bought":
+    case "nfts_bought":
         sortQuery = { nfts_bought: sortBy};
         break;
-    case "NFTs Sold":
+    case "nfts_sold":
         sortQuery = { nfts_sold: sortBy};
         break;
-    case "Collections Bought":
+    case "collections_bought":
         sortQuery = { collections_bought: sortBy};
         break;
-    case "Collections Sold":
+    case "collections_sold":
         sortQuery = { collections_sold: sortBy};
         break;
     default:
@@ -58,7 +86,8 @@ router.get('/api/profit-leaders', async ( req, resp) => {
     }
     // console.log(await query.sort(sortQuery).skip(skip).limit(offset).exec());
     // console.log(await query.exec());
-    resp.json(await query.sort(sortQuery).skip(skip).limit(offset).exec());
+    console.log(sortField);
+    resp.json(await WatchList.aggregate([addFields, { "$sort": sortQuery}, {"$skip": skip}, {"$limit":offset}]));
 });
 
 export default router;

@@ -18,4 +18,5 @@ export const etherscan_apikeys = [
     '9UWFM4FZNZKTT35FQWX46SGRIT6DR38A4S',
 ]
 export const opensea_api = 'https://api.opensea.io/api'
+export const blockcypher_transaction_api = 'https://api.blockcypher.com/v1/eth/main/txs/';
 export const opensea_origin_start_block = 5779378;

@@ -201,6 +201,8 @@ export const fetch_latest_blocknumber = async() => {
             let result = await axios( API_URL, {params}).catch(err => {
                 throw err;
             });
+            if( result.data === undefined || result.data.result === undefined)
+                continue;
             latest_onchain_blocknumber = result.data.result;
             break;
         } catch(err) {
