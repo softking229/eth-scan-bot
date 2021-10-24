@@ -9,6 +9,7 @@ var TransactionHistoryModelSchema = new Schema({
     to: String,
     tokenNumber: Number,
     tokenName: String,
+    tokenSymbol: String,
     value: Number,
     timestamp: Number,
     type: String,

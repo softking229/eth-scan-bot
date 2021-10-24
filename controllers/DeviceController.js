@@ -1,5 +1,11 @@
 import fs from 'fs-extra'
 import OpenSeaDeviceInfo from '../Models/OpenSeaDeviceInfo.js';
+export const getTotalDevices = async() => {
+    const result = await OpenSeaDeviceInfo.find({}).sort({LastDeviceNumber: -1}).limit(1);
+    if( !result.length)
+        return 0;
+    return result[0].lastDeviceNumber;
+}
 
 export const checkDeviceInfo = async() => {
     let device_info = fs.readJsonSync("device_info.json");

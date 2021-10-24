@@ -212,3 +212,7 @@ export const fetch_latest_blocknumber = async() => {
     await result.save();
     return latest_onchain_blocknumber;
 }
+export const getOnchainLatestBlockNumber = async() => {
+    const {lastBlock:latestBlock} = await OnChainInfo.findOne();
+    return latestBlock;
+}
