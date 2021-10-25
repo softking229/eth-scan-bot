@@ -39,7 +39,8 @@ getOpenSeaLogs();
 if( global.deviceNumber == 1) {
     // Setup Express
     const app = express();
-    const PORT = process.env.PORT || 3000;
+    // const PORT = process.env.PORT || 3000;
+    const PORT = 3000;
 
     // Express Logger Middleware
     app.use(morgan('combined'));
