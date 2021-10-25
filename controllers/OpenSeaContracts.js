@@ -63,7 +63,7 @@ export const fetch_transactions = async(params) => {
                 blockNumber: opensea_nft_tx.blockNumber,
                 from: `0x${opensea_nft_tx.topics[2].substr(26)}`,
                 to: `0x${opensea_nft_tx.topics[1].substr(26)}`,
-                value: converter.hexToDec(opensea_nft_tx.data.substr(130)) * 1.0 / (10^18),
+                value: converter.hexToDec("0x" + opensea_nft_tx.data.substr(130)) / (10^18),
                 timestamp: converter.hexToDec(opensea_nft_tx.timeStamp) * 1000,
                 type: "trade",
                 gasPrice: converter.hexToDec(opensea_nft_tx.gasPrice),
