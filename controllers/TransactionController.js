@@ -196,6 +196,7 @@ export const fetch_latest_blocknumber = async() => {
         action: "eth_blockNumber",
         apikey: API_KEY
     }
+    console.log(params);
     let latest_onchain_blocknumber;
     while(true) {
         try{

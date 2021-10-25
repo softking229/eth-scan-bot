@@ -32,9 +32,9 @@ await fetch_latest_blocknumber();
 if( global.deviceNumber == 1)
     getOnchainLatestBlocknumber();
 
-getNFTCollectionList();
-getLogsByNFTCollection();
-getOpenSeaLogs();
+// getNFTCollectionList();
+// getLogsByNFTCollection();
+// getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
     // Setup Express
