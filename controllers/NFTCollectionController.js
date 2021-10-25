@@ -9,11 +9,22 @@ import {getOnchainLatestBlockNumber, addTransaction, wait_api_call_limit} from "
 const Timer = util.promisify(setTimeout);
 
 async function scrap_etherscan(page) {
-    const { data: html } = await axios.get("https://etherscan.io/tokens-nft", {
-        params: {
-            p: page
+    let html;
+    while(true) {
+        try {
+            html = await axios.get("https://etherscan.io/tokens-nft", {
+                params: {
+                    p: page
+                }
+            }).catch(error => {
+                throw error
+            })
+            break;
+        } catch (error) {
+            await Timer(1000);
+            continue;
         }
-    })
+    }
     const urls = html.match(/(?<=token\/)0x[a-zA-Z0-9]+/g);
     //console.log(urls);
     if( urls && urls.length)
