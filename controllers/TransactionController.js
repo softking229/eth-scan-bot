@@ -148,7 +148,7 @@ export const addTransaction = async(transaction) => {
     try {
         await TransactionHistory.create(transaction);
         let promise_array;
-        if( transaction.type != "trade") {
+        if( transaction.type == "trade") {
             promise_array = [
                 addWalletInfoToWatchList({
                     address: transaction.from,
