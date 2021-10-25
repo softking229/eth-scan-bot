@@ -145,7 +145,7 @@ export const addWalletInfoToWatchList = async(params) => {
 }
 
 export const addTransaction = async(transaction) => {
-    console.log("---------------: "transaction.value);
+    console.log("---------------: ", transaction.value);
     try {
         await TransactionHistory.create(transaction);
         let promise_array;
