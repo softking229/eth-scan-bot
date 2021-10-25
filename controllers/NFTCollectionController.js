@@ -166,7 +166,7 @@ export const getTransactionData = async(log) => {
             }
         }
         let result = response.data;
-        transaction.value = result.total;
+        transaction.value = 1.0 * result.total / (10 ^ 18);
     }
     await addTransaction(transaction);
     console.log("value:", transaction.value);
