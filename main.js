@@ -28,7 +28,7 @@ try {
 
 global.deviceNumber = await checkDeviceInfo();
 
-await fetch_latest_blocknumber();
+//await fetch_latest_blocknumber();
 
 getNFTCollectionList();
 getLogsByNFTCollection();
@@ -47,5 +47,5 @@ if( global.deviceNumber == 1) {
     app.listen(PORT, () => {
         console.log(`app listening at http://localhost:${PORT}`)
     });
-    getOnchainLatestBlocknumber();
+  //  getOnchainLatestBlocknumber();
 }
