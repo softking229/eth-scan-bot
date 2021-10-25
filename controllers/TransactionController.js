@@ -191,9 +191,11 @@ export const getOnchainLatestBlocknumber = async() => {
 
 export const fetch_latest_blocknumber = async() => {
     const API_URL = process.env.API_URL;
+    const API_KEY = await wait_api_call_limit();
     const params = {
         module: "proxy",
-        action: "eth_blockNumber"
+        action: "eth_blockNumber",
+        apikey: API_KEY
     }
     let latest_onchain_blocknumber;
     while(true) {
@@ -201,16 +203,23 @@ export const fetch_latest_blocknumber = async() => {
             let result = await axios( API_URL, {params}).catch(err => {
                 throw err;
             });
-            if( result.data === undefined || result.data.result === undefined)
+            if( result.data === undefined || result.data.result === undefined){
+                await Timer(1000);
                 continue;
+            }
             latest_onchain_blocknumber = result.data.result;
             break;
         } catch(err) {
             console.log("Please check your network");
+            await Timer(1000);
         }
     }
     let result = await OnChainInfo.findOne({});
-    result.lastBlock = latest_onchain_blocknumber;
+    if( result == null) {
+        result = new OnChainInfo({lastBlock: latest_onchain_blocknumber});
+    }
+    else
+        result.lastBlock = latest_onchain_blocknumber;
     await result.save();
     return latest_onchain_blocknumber;
 }

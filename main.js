@@ -5,7 +5,7 @@ import morgan from 'morgan'
 import routes from './routes/index.js'
 import dotenv from "dotenv";
 import {checkDeviceInfo} from './controllers/DeviceController.js'
-import {getOnchainLatestBlocknumber} from './controllers/TransactionController.js'
+import {getOnchainLatestBlocknumber, fetch_latest_blocknumber} from './controllers/TransactionController.js'
 import util from 'util'
 import { exit } from 'process';
 import { getOpenSeaLogs } from './controllers/OpenSeaContracts.js'
@@ -29,6 +29,7 @@ try {
 
 global.deviceNumber = await checkDeviceInfo();
 
+await fetch_latest_blocknumber();
 if( global.deviceNumber == 1)
     getOnchainLatestBlocknumber();
 
