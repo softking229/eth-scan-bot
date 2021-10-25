@@ -28,11 +28,11 @@ try {
 
 global.deviceNumber = await checkDeviceInfo();
 
-await fetch_latest_blocknumber();
+//await fetch_latest_blocknumber();
 
-getNFTCollectionList();
-getLogsByNFTCollection();
-getOpenSeaLogs();
+//getNFTCollectionList();
+//getLogsByNFTCollection();
+//getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
     // Setup Express
@@ -47,5 +47,5 @@ if( global.deviceNumber == 1) {
     app.listen(PORT, () => {
         console.log(`app listening at http://localhost:${PORT}`)
     });
-    getOnchainLatestBlocknumber();
+    //getOnchainLatestBlocknumber();
 }
