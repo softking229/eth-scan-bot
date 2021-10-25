@@ -70,8 +70,10 @@ export const fetch_transactions = async(params) => {
                 gasUsed: converter.hexToDec(opensea_nft_tx.gasUsed)
             };
             addTransaction(transaction);
+            if( last_scrapped_block < converter.hexToDec(opensea_nft_tx.blockNumber))
+                last_scrapped_block = converter.hexToDec(opensea_nft_tx.blockNumber);
         }
-        last_scrapped_block = opensea_nft_tx_list.length?converter.hexToDec(opensea_nft_tx_list[opensea_nft_tx_list.length-1].blockNumber):last_scrapped_block;
+        // last_scrapped_block = opensea_nft_tx_list.length?converter.hexToDec(opensea_nft_tx_list[opensea_nft_tx_list.length-1].blockNumber):last_scrapped_block;
         transaction_count +=opensea_nft_tx_list.length;
         if( opensea_nft_tx_list.length < 1000)
             break;
