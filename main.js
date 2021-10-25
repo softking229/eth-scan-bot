@@ -7,7 +7,6 @@ import dotenv from "dotenv";
 import {checkDeviceInfo} from './controllers/DeviceController.js'
 import {getOnchainLatestBlocknumber, fetch_latest_blocknumber} from './controllers/TransactionController.js'
 import util from 'util'
-import { exit } from 'process';
 import { getOpenSeaLogs } from './controllers/OpenSeaContracts.js'
 import { main as getNFTCollectionList, getLogsByNFTCollection} from './controllers/NFTCollectionController.js'
 

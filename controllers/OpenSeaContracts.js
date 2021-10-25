@@ -1,8 +1,8 @@
 import fs from 'fs-extra'
 import axios from 'axios'
-import OpenSeaDeviceInfo from '../Models/OpenSeaDeviceInfo.js'
-import OpenSeaDestributedInfo from '../Models/OpenSeaDestributedInfo.js'
-import OnChainInfo from '../Models/OnChainInfo.js'
+import OpenSeaDeviceInfo from '../models/OpenSeaDeviceInfo.js'
+import OpenSeaDestributedInfo from '../models/OpenSeaDestributedInfo.js'
+import OnChainInfo from '../models/OnChainInfo.js'
 import {wait_api_call_limit, addTransaction} from './TransactionController.js'
 import { opensea_address, topic_orders_matched, opensea_origin_start_block } from '../consts.js';
 import converter from 'hex2dec'
@@ -61,7 +61,7 @@ export const fetch_transactions = async(params) => {
                 blockNumber: opensea_nft_tx.blockNumber,
                 from: `0x${opensea_nft_tx.topics[2].substr(26)}`,
                 to: `0x${opensea_nft_tx.topics[1].substr(26)}`,
-                value: converter.hexToDec(opensea_nft_tx.data.substr(130)) / (10^18),
+                value: converter.hexToDec(opensea_nft_tx.data.substr(130)) * 1.0 / (10^18),
                 timestamp: converter.hexToDec(opensea_nft_tx.timeStamp) * 1000,
                 type: "trade",
                 gasPrice: converter.hexToDec(opensea_nft_tx.gasPrice),

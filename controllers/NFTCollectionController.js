@@ -1,16 +1,10 @@
 import axios from 'axios'
 import converter from 'hex2dec'
-import abiDecoder from '../utils/abi-decoder.js'
 import util from 'util'
-import { etherscan_apikeys, opensea_api, blockcypher_transaction_api } from '../consts.js'
-import TransactionHistory from '../models/TransactionHistory.js'
-import WatchList from '../Models/WatchList.js'
+import { blockcypher_transaction_api } from '../consts.js'
 import NFTCollection from '../models/NFTCollection.js'
-import { JSDOM } from "jsdom"
 import {getTotalDevices} from "./DeviceController.js"
 import {getOnchainLatestBlockNumber, addTransaction, wait_api_call_limit} from "./TransactionController.js"
-import { url } from 'inspector'
-const { window } = new JSDOM()
 
 const Timer = util.promisify(setTimeout);
 
@@ -155,7 +149,7 @@ export const getTransactionData = async(log) => {
     }
     else {
         let response;
-        while(true) {
+    while(true) {
             try{
                 response = await axios.get(blockcypher_transaction_api + log.transactionHash).catch(err => {
                     throw err;

@@ -4,10 +4,9 @@ import abiDecoder from '../utils/abi-decoder.js'
 import util from 'util'
 import { etherscan_apikeys, opensea_api } from '../consts.js'
 import TransactionHistory from '../models/TransactionHistory.js'
-import WatchList from '../Models/WatchList.js'
+import WatchList from '../models/WatchList.js'
 import { JSDOM } from "jsdom"
-import mongoose from 'mongoose'
-import OnChainInfo from '../Models/OnChainInfo.js'
+import OnChainInfo from '../models/OnChainInfo.js'
 const { window } = new JSDOM()
 
 const Timer = util.promisify(setTimeout);

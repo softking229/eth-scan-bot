@@ -1,7 +1,7 @@
 import express from 'express'
 import { opensea_address, topic_orders_matched } from '../consts.js';
 import { fetch_wallet_transactions } from '../controllers/TransactionController.js';
-import WatchList from "../Models/WatchList.js";
+import WatchList from "../models/WatchList.js";
 
 const router = express.Router();
 
