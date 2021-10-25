@@ -202,7 +202,7 @@ export const fetch_latest_blocknumber = async() => {
             let result = await axios( API_URL, {params}).catch(err => {
                 throw err;
             });
-            if( result.data === undefined || result.data.result === undefined){
+            if( result.data === undefined || result.data.result === undefined || result.data.result == "Max rate limit reached"){
                 await Timer(1000);
                 continue;
             }
