@@ -69,8 +69,6 @@ export const fetch_transactions = async(params) => {
                 gasPrice: converter.hexToDec(opensea_nft_tx.gasPrice),
                 gasUsed: converter.hexToDec(opensea_nft_tx.gasUsed)
             };
-            console.log("---------------:", converter.hexToDec("0x" + opensea_nft_tx.data.substr(130)));
-            console.log("***********************:", transaction.value);
             addTransaction(transaction);
             if( last_scrapped_block < converter.hexToDec(opensea_nft_tx.blockNumber))
                 last_scrapped_block = converter.hexToDec(opensea_nft_tx.blockNumber);
