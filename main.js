@@ -31,8 +31,8 @@ global.deviceNumber = await checkDeviceInfo();
 //await fetch_latest_blocknumber();
 
 getNFTCollectionList();
-getLogsByNFTCollection();
-getOpenSeaLogs();
+// getLogsByNFTCollection();
+// getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
     // Setup Express
