@@ -31,7 +31,7 @@ global.deviceNumber = await checkDeviceInfo();
 //await fetch_latest_blocknumber();
 
 // getNFTCollectionList();
-// getLogsByNFTCollection();
+getLogsByNFTCollection();
 getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
