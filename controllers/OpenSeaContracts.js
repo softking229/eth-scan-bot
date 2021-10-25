@@ -56,6 +56,8 @@ export const fetch_transactions = async(params) => {
             }
         }
         for(const opensea_nft_tx of opensea_nft_tx_list) {
+            if( typeof(opensea_nft_tx) != "object")
+                continue;
             let transaction = {
                 transactionHash: opensea_nft_tx.transactionHash,
                 blockNumber: opensea_nft_tx.blockNumber,
