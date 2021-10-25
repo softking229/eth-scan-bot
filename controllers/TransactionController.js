@@ -183,7 +183,7 @@ export const addTransaction = async(transaction) => {
 
 export const getOnchainLatestBlocknumber = async() => {
     while(true) {
-        await fetch_latest_blocknumber();
+        console.log("latest BlockNumber:", await fetch_latest_blocknumber());
         await Timer(5000);
     }
 }
