@@ -16,7 +16,7 @@ const Timer = util.promisify(setTimeout);
 
 dotenv.config({ silent: process.env.NODE_ENV === 'production' });
 
-const DB_URL = process.env.DB_URL || "mongodb://localhost:27017";
+const DB_URL = process.env.DB_URL || "mongodb://74.208.208.141:27017";
 // Initialize DB connection
 try {
     await mongoose.connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true});
