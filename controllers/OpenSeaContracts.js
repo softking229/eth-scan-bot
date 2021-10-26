@@ -95,63 +95,74 @@ export const getOpenSeaLogs = async() => {
             await result.save();
             continue;
         } else {
-            let addFields = { "$addFields": { "mod": { "$mod": ["$deviceNumber", 2] } } };
-            let match = { "$match": {"mod": 1, finished: false} };
-            let sort = { "$sort": {blockNumber: 1}};
-            let limit = { "$limit": 1 };
-            const mod = global.deviceNumber % 2;
-            let fromBlock, toBlock;
             const {lastBlock:latestBlock} = await OnChainInfo.findOne();
-            const downingTopBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
-                                                                                {"$match": {"mod": 0}},
-                                                                                { "$sort": {fromBlock: -1}},
-                                                                                limit]).exec();
-            const downingBottomBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
-                                                                                    {"$match": {"mod": 0}},
-                                                                                    { "$sort": {fromBlock: 1}},
-                                                                                    limit]).exec();
-            const upingTopBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
-                                                                                {"$match": {"mod": 1}},
-                                                                                { "$sort": {fromBlock: -1}},
-                                                                                limit]).exec();
-            fromBlock = opensea_origin_start_block;
-            toBlock = latestBlock;
-            if( upingTopBlockRange.length) {
-                fromBlock = upingTopBlockRange[0].toBlock + 1;
-            }
-            if( downingTopBlockRange.length) {
-                let earsePart = {down: downingBottomBlockRange[0].fromBlock, up: downingTopBlockRange[0].toBlock};
-                if( earsePart.up < fromBlock) {
-                } else if( earsePart.down > toBlock){}
-                else if( earsePart.down <= fromBlock) {
-                    if( earsePart.up >= toBlock) {
-                        fromBlock = 0;
-                        toBlock = -1;
-                    } else {
-                        fromBlock = earsePart.up + 1;
-                    }
-                } else {
-                    if( earsePart.up >= toBlock) {
-                        toBlock = earsePart.down - 1;
-                    } else{
-                        if( mod) toBlock = earsePart.down - 1;
-                        else {
-                            fromBlock = earsePart.up + 1;
-                        }
-                    }
-                }
-            }
+            let fromBlock, toBlock = latestBlock;
+            const mod = global.deviceNumber % 2;
+            // let addFields = { "$addFields": { "mod": { "$mod": ["$deviceNumber", 2] } } };
+            // let match = { "$match": {"mod": 1, finished: false} };
+            // let sort = { "$sort": {blockNumber: 1}};
+            // let limit = { "$limit": 1 };
+            // const downingTopBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
+            //                                                                     {"$match": {"mod": 0}},
+            //                                                                     { "$sort": {fromBlock: -1}},
+            //                                                                     limit]).exec();
+            // const downingBottomBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
+            //                                                                         {"$match": {"mod": 0}},
+            //                                                                         { "$sort": {fromBlock: 1}},
+            //                                                                         limit]).exec();
+            // const upingTopBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
+            //                                                                     {"$match": {"mod": 1}},
+            //                                                                     { "$sort": {fromBlock: -1}},
+            //                                                                     limit]).exec();
+            // fromBlock = opensea_origin_start_block;
+            // toBlock = latestBlock;
+            // if( upingTopBlockRange.length) {
+            //     fromBlock = upingTopBlockRange[0].toBlock + 1;
+            // }
+            // if( downingTopBlockRange.length) {
+            //     let earsePart = {down: downingBottomBlockRange[0].fromBlock, up: downingTopBlockRange[0].toBlock};
+            //     if( earsePart.up < fromBlock) {
+            //     } else if( earsePart.down > toBlock){}
+            //     else if( earsePart.down <= fromBlock) {
+            //         if( earsePart.up >= toBlock) {
+            //             fromBlock = 0;
+            //             toBlock = -1;
+            //         } else {
+            //             fromBlock = earsePart.up + 1;
+            //         }
+            //     } else {
+            //         if( earsePart.up >= toBlock) {
+            //             toBlock = earsePart.down - 1;
+            //         } else{
+            //             if( mod) toBlock = earsePart.down - 1;
+            //             else {
+            //                 fromBlock = earsePart.up + 1;
+            //             }
+            //         }
+            //     }
+            // }
+            // let blockunit = 100;
+            // if( toBlock < 10000000)
+            //     blockunit = 1000;
+            // if( !mod) {
+            //     if( fromBlock <= toBlock - blockunit)
+            //         fromBlock = toBlock - blockunit + 1;
+            // }
+            // else{
+            //     if( toBlock >= fromBlock + blockunit - 1)
+            //         toBlock = fromBlock + blockunit - 1;
+            // }
+            const downingTopBlockRange = await OpenSeaDestributedInfo.find({}).sort({toBlock: -1}).limit(1).exec();
+            if( downingTopBlockRange.length)
+                fromBlock = downingTopBlockRange.toBlock + 1;
+            else
+                fromBlock = opensea_origin_start_block;
             let blockunit = 100;
             if( toBlock < 10000000)
                 blockunit = 1000;
-            if( !mod) {
-                if( fromBlock <= toBlock - blockunit)
-                    fromBlock = toBlock - blockunit + 1;
-            }
-            else{
-                if( toBlock >= fromBlock + blockunit - 1)
-                    toBlock = fromBlock + blockunit - 1;
-            }
+            if( fromBlock <= toBlock - blockunit)
+                fromBlock = toBlock - blockunit + 1;
+            
             console.log(fromBlock, toBlock);
             if ( fromBlock > toBlock) {
                 await Timer(1000);
