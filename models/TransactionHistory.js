@@ -40,7 +40,8 @@ var TransactionHistoryModelSchema = new Schema({
     confirmations: Number,
     confidence: Number,
     inputs: Array,
-    outputs: Array
+    outputs: Array,
+    timeStamp: Number
 });
 
 // Compile model from schema

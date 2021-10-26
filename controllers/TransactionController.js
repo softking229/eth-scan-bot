@@ -46,8 +46,9 @@ var get_token_info = async (input) => {
 
 export const wait_api_call_limit = async() => {
     while(true){
-        let min_id = 0;
-        for(let i = 1; i < current_api_calls.length; i++) {
+        let i = global.deviceNumber % 5;
+        let min_id = i;
+        for(; i < current_api_calls.length; i += 5) {
             if(current_api_calls[i] < current_api_calls[min_id]){
                 min_id = i;
             }
@@ -133,98 +134,165 @@ export const fetch_wallet_transactions = async(params, wallet) => {
     return tx_results;
 };
 
-export const addWalletInfoToWatchList = async(params) => {
-    try {
-        await WatchList.create(params);
-    } catch (error) {
-        const wallet = await WatchList.findOne({address: params.address});
-        wallet.spent += params.spent;
-        wallet.revenue += params.revenue;
-        wallet.nfts_bought += params.nfts_bought;
-        wallet.nfts_sold += params.nfts_sold;
-        wallet.save();
+export const addLog = async(log) => {
+    while( true) {
+        try {
+            await Log.create(log);
+            if( log.topics.length < 3) {
+                return;
+            }
+            let transaction_history = await TransactionHistory.findOne({hash: log.transactionHash});
+            if( transaction_history) {
+                if( log.address != opensea_address && transaction_history.from_opensea)
+                    await fetch_transaction_by_hash(log.transactionHash, transaction_history, log);
+            } else {
+                if( log.address != opensea_address) {
+                    await fetch_transaction_by_hash(log.transactionHash, transaction_history, log);
+                }
+                else {
+                    addTransaction({
+                        from_opensea: true,
+                        block_height: log.blockNumber,
+                        hash: log.transactionHash,
+                        addresses: ["0x" + log.topics[2].substr(26),
+                                    "0x" + log.topics[1].substr(26)],
+                        total: converter.hexToDec(log.data.substr(130)) * 1.0 / (10 ** 18),
+                        fees: converter.hexToDec(log.gasPrice) / (10 ** 18) * converter.hexToDec(log.gasUsed),
+                        gas_used: log.gasUsed,
+                        gas_price: log.gasPrice,
+                        timeStamp: log.timeStamp * 1000
+                    }, true);
+                }
+            }
+            break;
+        } catch (error) { break; }
     }
 }
 
-export const fetch_transaction_by_hash = async(hash, oldTransaction) => {
+export const fetch_transaction_by_hash = async(hash, oldTransaction, log) => {
     if(global.fetch_transaction_pending.findIndex(element => element == hash) >= 0) {
         return;
     }
     global.fetch_transaction_pending.push(hash);
     while(true) {
         try{
-            let response = await axios.get(blockcypher_transaction_api + hash).catch(err => {
+            //////////////////////////////////////////////////
+            // let response = await axios.get(blockcypher_transaction_api + hash).catch(err => {
+            //     throw err;
+            // });
+            // const index = global.fetch_transaction_pending.findIndex(element => element == hash);
+            // let result = response.data;
+            // result.total = 1.0 * result.total / (10 ** 18);
+            // result.fees = 1.0 * result.fees / (10 ** 18);
+            // result.gas_price = 1.0 * result.gas_price / (10 ** 18);
+            // result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
+            // result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
+            // result.from_opensea = false;
+            // if( 1.0 * result.total >= 10000){
+            //     result.alt_total = result.total;
+            //     result.total = 0;
+            // }
+
+            // if( oldTransaction) {
+            //     await oldTransaction.updateOne(result);
+            // }
+            // else {
+            //     await addTransaction( result);
+            // }
+            // if( oldTransaction) {
+            //     await oldTransaction.updateOne(result);
+            // }
+            // else {
+            //     await addTransaction( result);
+            // }
+            //////////////////////////////////////
+
+            const API_KEY = await wait_api_call_limit();
+            const API_URL = process.env.API_URL;
+            let params = {
+                module: "account",
+                action: "txlist",
+                address: "0x" + log.topics[2].substr(26),
+                startblock: converter.hexToDec(log.blockNumber),
+                endblock: converter.hexToDec(log.blockNumber),
+                apikey: API_KEY
+            };
+            let response = await axios( API_URL, {params}).catch(err => {
                 throw err;
             });
-            const index = global.fetch_transaction_pending.findIndex(element => element == hash);
-            let result = response.data;
-            result.total = 1.0 * result.total / (10 ** 18);
-            result.fees = 1.0 * result.fees / (10 ** 18);
-            result.gas_price = 1.0 * result.gas_price / (10 ** 18);
-            result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
-            result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
-            result.from_opensea = false;
+            if( response.data === undefined 
+                || response.data.result === undefined 
+                || response.data.result == "Max rate limit reached"){
+                await Timer(1000);
+                continue;
+            }
+            let transaction = response.data.result.find(element => element.hash == log.transactionHash);
+            if( transaction === undefined)
+                break;
+            let result = {
+                from_opensea: false,
+                block_height: transaction.blockNumber,
+                hash: transaction.hash,
+                addresses: [transaction.from, transaction.to],
+                total: 1.0 * transaction.value / (10 ** 18),
+                fees: 1.0 * transaction.gasPrice / (10 ** 18) * transaction.gasUsed,
+                gas_used: transaction.gasUsed,
+                gas_price: 1.0 * transaction.gasPrice / (10 ** 18),
+                timeStamp: transaction.timeStamp * 1000,
+                confirmations: transaction.confirmations,
+                gas_tip_cap: 0,
+                gas_fee_cap: 0
+            }
             if( 1.0 * result.total >= 10000){
                 result.alt_total = result.total;
                 result.total = 0;
             }
 
-            if( oldTransaction) {
-                await oldTransaction.updateOne(result);
-            }
-            else {
-                await addTransaction( result);
-            }
+            let isTrade = true;
+            if( log.topics.length >=1 && log.topics[1] == "0x0000000000000000000000000000000000000000000000000000000000000000")
+                isTrade = false;
+            await addTransaction( result, false);
+            const index = global.fetch_transaction_pending.findIndex(element => element == hash);
             global.fetch_transaction_pending.splice(index, 1);
-            //console.log("****************removed", hash);
             break;
         } catch(err) {
-            //console.log("Please check your network");
-            console.log(err.message);
+            console.log(err.message, "fetch_transaction_by_hash");
             await Timer(500);
         }
     }
 }
 
-export const addLog = async(log) => {
-    try {
-        await Log.create(log);
-        let transaction_history = await TransactionHistory.findOne({hash: log.transactionHash});
-        //console.log( transaction_history?transaction_history.hash:transaction_history, log.transactionHash);
-        if( transaction_history) {
-            if( log.address != opensea_address && transaction_history.from_opensea)
-                await fetch_transaction_by_hash(log.transactionHash, transaction_history);
-        } else {
-            if( log.address != opensea_address) {
-                await fetch_transaction_by_hash(log.transactionHash, transaction_history);
-            }
-            else {
-                addTransaction({
-                    from_opensea: true,
-                    block_height: log.blockNumber,
-                    hash: log.transactionHash,
-                    addresses: ["0x" + log.topics[2].substr(26),
-                                "0x" + log.topics[1].substr(26)],
-                    total: converter.hexToDec(log.data.substr(130)) * 1.0 / (10 ** 18),
-                    fees: converter.hexToDec(log.gasPrice) / (10 ** 18) * converter.hexToDec(log.gasUsed),
-                    gas_used: log.gasUsed,
-                    gas_price: log.gasPrice,
-                });
-            }
-        }
-    } catch (error) {}
-}
-
-export const addTransaction = async(transaction) => {
+export const addTransaction = async(transaction, isTrade) => {
     try {
         if( 1.0 * transaction.total >= 10000){
             transaction.alt_total = transaction.total;
             transaction.total = 0;
         }
+        let transaction_row = await TransactionHistory.findOne({hash: transaction.hash});
+        if( transaction_row) {
+            if( !isTrade) {
+                await addWalletInfoToWatchList({
+                    address: transaction.addresses[1],
+                    spent: 0,
+                    revenue: 0,
+                    nfts_bought: 0,
+                    nfts_sold: 0,
+                    mint: 1
+                });
+            }
+            if( transaction_now.from_opensea == true) {
+                await TransactionHistory.updateOne({hash: transaction.hash}, transaction);
+            }
+            return;
+        }
         await TransactionHistory.create(transaction);
         let promise_array = [];
-        if( transaction.from_opensea == true
-            ||(transaction.internal_txids != undefined && !transaction.internal_txids.length)) {
+        // if( transaction.from_opensea == true
+        //     ||(transaction.internal_txids != undefined 
+        //         && !transaction.internal_txids.length)) {
+        if( transaction.addresses[0] == "" || transaction.addresses[1] == "")
+            return;
+        if( isTrade) {
             promise_array.push(addWalletInfoToWatchList({
                 address: transaction.addresses[0],
                 spent: 0,
@@ -252,7 +320,21 @@ export const addTransaction = async(transaction) => {
             }))
         }
         await Promise.all(promise_array);
-    } catch (error) {console.log(error.message)};
+    } catch (error) {console.log(error.message, "addTransaction")};
+}
+
+export const addWalletInfoToWatchList = async(params) => {
+    try {
+        await WatchList.create(params);
+    } catch (error) {
+        const wallet = await WatchList.findOne({address: params.address});
+        wallet.spent += params.spent;
+        wallet.revenue += params.revenue;
+        wallet.nfts_bought += params.nfts_bought;
+        wallet.nfts_sold += params.nfts_sold;
+        wallet.mint += params.mint;
+        wallet.save();
+    }
 }
 
 export const getOnchainLatestBlocknumber = async() => {
@@ -283,8 +365,7 @@ export const fetch_latest_blocknumber = async() => {
             latest_onchain_blocknumber = result.data.result;
             break;
         } catch(err) {
-            console.log("Please check your network");
-            console.log(err.message);
+            console.log(err.message, "fetch_latest_blocknumber");
             await Timer(1000);
         }
     }

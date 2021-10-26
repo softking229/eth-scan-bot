@@ -104,7 +104,7 @@ export const getLogsByNFTCollection = async() => {
                     logs = result.data.result; 
                     break;
                 } catch(err) {
-                    console.log("Please check your network");
+                    console.log(err.message, "getLogsByNFTCollection");
                     await Timer(1000);
                 }
             }
@@ -118,12 +118,10 @@ export const getLogsByNFTCollection = async() => {
             while( index < logs.length) {
                 let promise_array = [];
                 sublogs = logs.slice(index, unit + index);
-                //console.log("++++++++++",logs.length, index, unit, sublogs.length);
                 for( const log of sublogs) {
                     promise_array.push(addLog(log));
                 }
                 await Promise.all(promise_array);
-                //console.log("********", index, sublogs.length);
                 index += unit;
             }
             if( logs.length >= 1000) 
