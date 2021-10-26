@@ -125,6 +125,7 @@ export const getLogsByNFTCollection = async() => {
                 }
                 await Promise.all(promise_array);
                 index += unit;
+                console.log(index);
             }
             if( logs.length >= 1000) 
                 lastBlock --;
