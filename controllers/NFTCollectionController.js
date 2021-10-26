@@ -127,6 +127,11 @@ export const getLogsByNFTCollection = async() => {
             if( logs.length >= 1000) 
                 lastBlock --;
             let updating_collection = await NFTCollection.findOne({contractHash: nft_collection.contractHash});
+            if( updating_collection == null) {
+                updating_collection = new NFTCollection();
+                updating_collection.lastCheckedBlock = lastBlock;
+                updating_collection.contractHash = nft_collection.contractHash;
+            }
             updating_collection.lastCheckedBlock = lastBlock;
             await updating_collection.save();
         }
