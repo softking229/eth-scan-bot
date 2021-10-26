@@ -266,15 +266,15 @@ export const fetch_transaction_by_hash = async(hash, oldTransaction, log) => {
                 gas_tip_cap: 0,
                 gas_fee_cap: 0
             }
-            if( 1.0 * result.total >= 1000){
-                result.alt_total = result.total;
-                result.total = 0;
-            }
+            // if( 1.0 * result.total >= 1000){
+            //     result.alt_total = result.total;
+            //     result.total = 0;
+            // }
 
             let isTrade = true;
             if( log.topics.length >=1 && log.topics[1] == "0x0000000000000000000000000000000000000000000000000000000000000000")
                 isTrade = false;
-            await addTransaction( result, false);
+            await addTransaction( result, isTrade);
             const index = global.fetch_transaction_pending.findIndex(element => element == hash);
             global.fetch_transaction_pending.splice(index, 1);
             break;
@@ -287,10 +287,10 @@ export const fetch_transaction_by_hash = async(hash, oldTransaction, log) => {
 
 export const addTransaction = async(transaction, isTrade) => {
     try {
-        if( 1.0 * transaction.total >= 1000){
-            transaction.alt_total = transaction.total;
-            transaction.total = 0;
-        }
+        // if( 1.0 * transaction.total >= 1000){
+        //     transaction.alt_total = transaction.total;
+        //     transaction.total = 0;
+        // }
         let transaction_row = await TransactionHistory.findOne({hash: transaction.hash});
         if( transaction_row) {
             if( !isTrade) {
