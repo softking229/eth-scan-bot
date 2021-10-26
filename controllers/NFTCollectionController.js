@@ -130,15 +130,19 @@ export const getLogsByNFTCollection = async() => {
                 lastBlock --;
             else
                 lastBlock = latestBlock;
-            let updating_collection = await NFTCollection.findOne({contractHash: nft_collection.contractHash});
-            if( updating_collection == null) {
-                updating_collection = new NFTCollection();
+            try{
+                let updating_collection = await NFTCollection.findOne({contractHash: nft_collection.contractHash});
+                if( updating_collection == null) {
+                    updating_collection = new NFTCollection();
+                    updating_collection.lastCheckedBlock = lastBlock;
+                    updating_collection.contractHash = nft_collection.contractHash;
+                }
                 updating_collection.lastCheckedBlock = lastBlock;
-                updating_collection.contractHash = nft_collection.contractHash;
+                await updating_collection.save();
+                console.log("lastBlock:", lastBlock, updating_collection._id);
+            }catch(err) {
+                console.log(err.message, "updating nftcollectionlist lastcheckedblocknumber");
             }
-            updating_collection.lastCheckedBlock = lastBlock;
-            await updating_collection.save();
-            console.log("lastBlock:", lastBlock, updating_collection._id);
         }
 
         await Timer(1000);
