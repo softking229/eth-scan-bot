@@ -170,10 +170,10 @@ export const addTransaction = async(transaction) => {
             promise_array = [
                 addWalletInfoToWatchList({
                     address: transaction.from,
-                    spent: 0,
+                    spent: transaction.value,
                     revenue: transaction.value,
                     nfts_bought: 0,
-                    nfts_sold: 1,
+                    nfts_sold: 0,
                     mint: 1
                 })];
         }
