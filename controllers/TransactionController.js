@@ -186,8 +186,10 @@ export const addLog = async(log) => {
                         // }
                         await fetch_transaction_by_hash(log.transactionHash, transaction_history, log, transaction.total);
                     }
-                    else
+                    else {
+                        console.log("total is less than 100");
                         await addTransaction(transaction, true);
+                    }
                 }
             }
             break;
