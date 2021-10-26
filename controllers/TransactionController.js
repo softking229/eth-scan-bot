@@ -162,7 +162,7 @@ export const addLog = async(log) => {
                         gas_price: log.gasPrice,
                         timeStamp: log.timeStamp * 1000
                     };
-                    if( transaction.total > 10) {
+                    if( transaction.total > 100) {
                         // while( true) {
                         //     try {
                         //         let response = await axios.get(blockcypher_transaction_api + transaction.hash).catch(err => {
