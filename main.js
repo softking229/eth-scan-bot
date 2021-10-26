@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 import autoIncrement from 'mongoose-auto-increment'
 import express from 'express'
 import morgan from 'morgan'
-import routes from './routes/index.js'
 import dotenv from "dotenv";
+import routes from './routes/index.js'
 import {checkDeviceInfo} from './controllers/DeviceController.js'
 import {getOnchainLatestBlocknumber, fetch_latest_blocknumber} from './controllers/TransactionController.js'
 import util from 'util'
@@ -15,17 +15,17 @@ const Timer = util.promisify(setTimeout);
 
 dotenv.config({ silent: process.env.NODE_ENV === 'production' });
 
-const DB_URL = process.env.DB_URL || "mongodb://localhost:27017";
+const DB_URL = "mongodb://localhost:27017/onchain";
 // Initialize DB connection
 try {
     await mongoose.connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true});
     autoIncrement.initialize(mongoose.connection);
 } catch (err) {
     console.log(err.message);
-    //console.error("Please check MongoDB connection");
     process.exit(0);
 }
 
+global.fetch_transaction_pending = [];
 global.deviceNumber = await checkDeviceInfo();
 
 await fetch_latest_blocknumber();

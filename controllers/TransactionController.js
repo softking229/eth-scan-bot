@@ -2,11 +2,13 @@ import axios from 'axios'
 import converter from 'hex2dec'
 import abiDecoder from '../utils/abi-decoder.js'
 import util from 'util'
-import { etherscan_apikeys, opensea_api } from '../consts.js'
+import { etherscan_apikeys, opensea_api, blockcypher_transaction_api } from '../consts.js'
 import TransactionHistory from '../models/TransactionHistory.js'
 import WatchList from '../models/WatchList.js'
 import { JSDOM } from "jsdom"
 import OnChainInfo from '../models/OnChainInfo.js'
+import Log from '../models/Log.js'
+import { opensea_address } from '../consts.js'
 const { window } = new JSDOM()
 
 const Timer = util.promisify(setTimeout);
@@ -144,41 +146,113 @@ export const addWalletInfoToWatchList = async(params) => {
     }
 }
 
+export const fetch_transaction_by_hash = async(hash, oldTransaction) => {
+    if(global.fetch_transaction_pending.findIndex(element => element == hash) >= 0) {
+        return;
+    }
+    global.fetch_transaction_pending.push(hash);
+    while(true) {
+        try{
+            let response = await axios.get(blockcypher_transaction_api + hash).catch(err => {
+                throw err;
+            });
+            const index = global.fetch_transaction_pending.findIndex(element => element == hash);
+            let result = response.data;
+            result.total = 1.0 * result.total / (10 ** 18);
+            result.fees = 1.0 * result.fees / (10 ** 18);
+            result.gas_price = 1.0 * result.gas_price / (10 ** 18);
+            result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
+            result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
+            result.from_opensea = false;
+            if( 1.0 * result.total >= 10000){
+                result.alt_total = result.total;
+                result.total = 0;
+            }
+
+            if( oldTransaction) {
+                await oldTransaction.updateOne(result);
+            }
+            else {
+                await addTransaction( result);
+            }
+            global.fetch_transaction_pending.splice(index, 1);
+            //console.log("****************removed", hash);
+            break;
+        } catch(err) {
+            //console.log("Please check your network");
+            console.log(err.message);
+            await Timer(500);
+        }
+    }
+}
+
+export const addLog = async(log) => {
+    try {
+        await Log.create(log);
+        let transaction_history = await TransactionHistory.findOne({hash: log.transactionHash});
+        //console.log( transaction_history?transaction_history.hash:transaction_history, log.transactionHash);
+        if( transaction_history) {
+            if( log.address != opensea_address && transaction_history.from_opensea)
+                await fetch_transaction_by_hash(log.transactionHash, transaction_history);
+        } else {
+            if( log.address != opensea_address) {
+                await fetch_transaction_by_hash(log.transactionHash, transaction_history);
+            }
+            else {
+                addTransaction({
+                    from_opensea: true,
+                    block_height: log.blockNumber,
+                    hash: log.transactionHash,
+                    addresses: ["0x" + log.topics[2].substr(26),
+                                "0x" + log.topics[1].substr(26)],
+                    total: converter.hexToDec(log.data.substr(130)) * 1.0 / (10 ** 18),
+                    fees: converter.hexToDec(log.gasPrice) / (10 ** 18) * converter.hexToDec(log.gasUsed),
+                    gas_used: log.gasUsed,
+                    gas_price: log.gasPrice,
+                });
+            }
+        }
+    } catch (error) {}
+}
+
 export const addTransaction = async(transaction) => {
     try {
+        if( 1.0 * transaction.total >= 10000){
+            transaction.alt_total = transaction.total;
+            transaction.total = 0;
+        }
         await TransactionHistory.create(transaction);
-        let promise_array;
-        if( transaction.type == "trade") {
-            promise_array = [
-                addWalletInfoToWatchList({
-                    address: transaction.from,
-                    spent: 0,
-                    revenue: transaction.value,
-                    nfts_bought: 0,
-                    nfts_sold: 1,
-                    mint: 0
-                }),
-                addWalletInfoToWatchList({
-                    address: transaction.to,
-                    spent: transaction.value,
-                    revenue: 0,
-                    nfts_bought: 1,
-                    nfts_sold: 0,
-                    mint: 0
-                })];
+        let promise_array = [];
+        if( transaction.from_opensea == true
+            ||(transaction.internal_txids != undefined && !transaction.internal_txids.length)) {
+            promise_array.push(addWalletInfoToWatchList({
+                address: transaction.addresses[0],
+                spent: 0,
+                revenue: transaction.total,
+                nfts_bought: 0,
+                nfts_sold: 1,
+                mint: 0
+            }))
+            promise_array.push(addWalletInfoToWatchList({
+                address: transaction.addresses[1],
+                spent: transaction.total,
+                revenue: 0,
+                nfts_bought: 1,
+                nfts_sold: 0,
+                mint: 0
+            }))
         } else {
-            promise_array = [
-                addWalletInfoToWatchList({
-                    address: transaction.from,
-                    spent: transaction.value,
-                    revenue: transaction.value,
-                    nfts_bought: 0,
-                    nfts_sold: 0,
-                    mint: 1
-                })];
+            promise_array.push(addWalletInfoToWatchList({
+                address: transaction.addresses[1],
+                spent: 0,
+                revenue: 0,
+                nfts_bought: 0,
+                nfts_sold: 0,
+                mint: 1
+            }))
         }
         await Promise.all(promise_array);
-    } catch (error) {}
+    } catch (error) {console.log(error.message)};
 }
 
 export const getOnchainLatestBlocknumber = async() => {
@@ -210,6 +284,7 @@ export const fetch_latest_blocknumber = async() => {
             break;
         } catch(err) {
             console.log("Please check your network");
+            console.log(err.message);
             await Timer(1000);
         }
     }

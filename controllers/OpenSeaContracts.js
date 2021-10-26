@@ -3,12 +3,13 @@ import axios from 'axios'
 import OpenSeaDeviceInfo from '../models/OpenSeaDeviceInfo.js'
 import OpenSeaDestributedInfo from '../models/OpenSeaDestributedInfo.js'
 import OnChainInfo from '../models/OnChainInfo.js'
-import {wait_api_call_limit, addTransaction} from './TransactionController.js'
+import {wait_api_call_limit, addLog} from './TransactionController.js'
 import { opensea_address, topic_orders_matched, opensea_origin_start_block } from '../consts.js';
 import converter from 'hex2dec'
 import abiDecoder from '../utils/abi-decoder.js'
 import util from 'util'
 import { JSDOM } from "jsdom"
+import { allowedNodeEnvironmentFlags } from 'process'
 const { window } = new JSDOM()
 const Timer = util.promisify(setTimeout);
 
@@ -58,22 +59,10 @@ export const fetch_transactions = async(params) => {
         for(const opensea_nft_tx of opensea_nft_tx_list) {
             if( typeof(opensea_nft_tx) != "object")
                 continue;
-            let transaction = {
-                transactionHash: opensea_nft_tx.transactionHash,
-                blockNumber: opensea_nft_tx.blockNumber,
-                from: `0x${opensea_nft_tx.topics[2].substr(26)}`,
-                to: `0x${opensea_nft_tx.topics[1].substr(26)}`,
-                value: converter.hexToDec("0x" + opensea_nft_tx.data.substr(130)) / (10 ** 18),
-                timestamp: converter.hexToDec(opensea_nft_tx.timeStamp) * 1000,
-                type: "trade",
-                gasPrice: converter.hexToDec(opensea_nft_tx.gasPrice),
-                gasUsed: converter.hexToDec(opensea_nft_tx.gasUsed)
-            };
-            addTransaction(transaction);
+            addLog(opensea_nft_tx);
             if( last_scrapped_block < converter.hexToDec(opensea_nft_tx.blockNumber))
                 last_scrapped_block = converter.hexToDec(opensea_nft_tx.blockNumber);
         }
-        // last_scrapped_block = opensea_nft_tx_list.length?converter.hexToDec(opensea_nft_tx_list[opensea_nft_tx_list.length-1].blockNumber):last_scrapped_block;
         transaction_count +=opensea_nft_tx_list.length;
         if( opensea_nft_tx_list.length < 1000)
             break;

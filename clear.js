@@ -8,10 +8,11 @@ import OpenSeaDeviceInfo from './models/OpenSeaDeviceInfo.js'
 import TransactionHistory from './models/TransactionHistory.js'
 import WatchList from './models/WatchList.js'
 import OpenSeaContractLog from './models/OpenSeaContractLog.js'
+import Log from './models/Log.js'
 
 dotenv.config({ silent: process.env.NODE_ENV === 'production' });
 
-const DB_URL = process.env.DB_URL || "mongodb://localhost:27017";
+const DB_URL = "mongodb://localhost:27017/onchain";
 // Initialize DB connection
 try {
     await mongoose.connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true});
@@ -25,20 +26,34 @@ let device_info = fs.readJsonSync("device_info.json");
 device_info = {"number":0};
 fs.writeJsonSync("device_info.json", device_info);
 
-await NFTCollection.deleteMany();
-console.log("NFTCollection removed");
-await OnChainInfo.deleteMany();
-console.log("OnChainInfo removed");
-await OpenSeaContractLog.deleteMany();
-console.log("OpenSeaContractLog removed");
-await OpenSeaDestributedInfo.deleteMany();
-console.log("OpenSeaDestributedInfo removed");
-await OpenSeaDeviceInfo.deleteMany();
-console.log("OpenSeaDeviceInfo removed");
-await TransactionHistory.deleteMany();
-console.log("TransactionHistory removed");
-await WatchList.deleteMany();
-console.log("WatchList removed");
+try {
+    await mongoose.connection.db.dropCollection("logs");
+    console.log("Log removed");
+}catch(err){}
+try {
+    await mongoose.connection.db.dropCollection("nftcollections");
+    console.log("NFTCollection removed");
+}catch(err){}
+try {
+    await mongoose.connection.db.dropCollection("onchaininfos");
+    console.log("OnChainInfo removed");
+}catch(err){}
+try {
+    await mongoose.connection.db.dropCollection("openseadestributedinfos");
+    console.log("OpenSeaDestributedInfo removed");
+}catch(err){}
+try {
+    await mongoose.connection.db.dropCollection("openseadeviceinfos");
+    console.log("OpenSeaDeviceInfo removed");
+}catch(err){}
+try {
+    await mongoose.connection.db.dropCollection("transactionhistories");
+    console.log("TransactionHistory removed");
+}catch(err){}
+try {
+    await mongoose.connection.db.dropCollection("watchlists");
+    console.log("WatchList removed");
+}catch(err){}
 
 console.log("finished");
 process.exit(0);
