@@ -307,7 +307,7 @@ export const addTransaction = async(transaction, isTrade) => {
                     mint: 1
                 });
             }
-            if( transaction_now.from_opensea == true) {
+            if( transaction_row.from_opensea == true) {
                 await TransactionHistory.updateOne({hash: transaction.hash}, transaction);
             }
             return;
