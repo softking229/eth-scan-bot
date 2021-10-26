@@ -150,7 +150,7 @@ export const addLog = async(log) => {
                     await fetch_transaction_by_hash(log.transactionHash, transaction_history, log);
                 }
                 else {
-                    addTransaction({
+                    let transaction = {
                         from_opensea: true,
                         block_height: log.blockNumber,
                         hash: log.transactionHash,
@@ -161,7 +161,30 @@ export const addLog = async(log) => {
                         gas_used: log.gasUsed,
                         gas_price: log.gasPrice,
                         timeStamp: log.timeStamp * 1000
-                    }, true);
+                    };
+                    if( transaction.total > 10) {
+                        while( true) {
+                            try {
+                                let response = await axios.get(blockcypher_transaction_api + hash).catch(err => {
+                                    throw err;
+                                });
+                                let result = response.data;
+                                result.total = 1.0 * result.total / (10 ** 18);
+                                result.fees = 1.0 * result.fees / (10 ** 18);
+                                result.gas_price = 1.0 * result.gas_price / (10 ** 18);
+                                result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
+                                result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
+                                if( result.total == 0)
+                                    result.alt_total = transaction.total;
+                                result.from_opensea = false;
+                                transaction = result;
+                                break;
+                            } catch (error) {
+                                console.log(error.message, "validating big price");
+                            }
+                        }
+                    }
+                    addTransaction(transaction, true);
                 }
             }
             break;
