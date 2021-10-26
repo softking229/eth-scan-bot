@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node main.js",
-    "clear": "node clear.js"
+    "clear": "node clear.js",
+    "clear-device": "node clear_device.js"
   },
   "author": "",
   "license": "ISC",
