@@ -141,17 +141,16 @@ export const getOpenSeaLogs = async() => {
                     }
                 }
             }
+            let blockunit = 100;
+            if( toBlock < 10000000)
+                blockunit = 1000;
             if( !mod) {
-                if( fromBlock <= toBlock - 100)
-                    fromBlock = toBlock - 100 + 1;
+                if( fromBlock <= toBlock - blockunit)
+                    fromBlock = toBlock - blockunit + 1;
             }
             else{
-                if( toBlock < 10000000)
-                if( toBlock >= fromBlock + 1000 - 1)
-                    toBlock = fromBlock + 1000 - 1;
-                else
-                    if( toBlock >= fromBlock + 100 - 1)
-                    toBlock = fromBlock + 100 - 1;
+                if( toBlock >= fromBlock + blockunit - 1)
+                    toBlock = fromBlock + blockunit - 1;
             }
             if ( fromBlock > toBlock) {
                 await Timer(1000);
