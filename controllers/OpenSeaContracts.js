@@ -152,6 +152,7 @@ export const getOpenSeaLogs = async() => {
                 if( toBlock >= fromBlock + blockunit - 1)
                     toBlock = fromBlock + blockunit - 1;
             }
+            console.log(fromBlock, toBlock);
             if ( fromBlock > toBlock) {
                 await Timer(1000);
                 continue;
