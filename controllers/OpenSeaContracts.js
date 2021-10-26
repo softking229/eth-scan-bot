@@ -180,6 +180,7 @@ export const getOpenSeaLogs = async() => {
                 await OpenSeaDestributedInfo.updateOne({fromBlock: fromBlock}, {finished: true});
                 continue;
             }catch(err) {
+                console.log(err.message);
                 continue;
             }
         }
