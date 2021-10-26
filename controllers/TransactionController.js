@@ -165,7 +165,7 @@ export const addLog = async(log) => {
                     if( transaction.total > 10) {
                         while( true) {
                             try {
-                                let response = await axios.get(blockcypher_transaction_api + hash).catch(err => {
+                                let response = await axios.get(blockcypher_transaction_api + transaction.hash).catch(err => {
                                     throw err;
                                 });
                                 let result = response.data;
