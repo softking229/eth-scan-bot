@@ -163,28 +163,30 @@ export const addLog = async(log) => {
                         timeStamp: log.timeStamp * 1000
                     };
                     if( transaction.total > 10) {
-                        while( true) {
-                            try {
-                                let response = await axios.get(blockcypher_transaction_api + transaction.hash).catch(err => {
-                                    throw err;
-                                });
-                                let result = response.data;
-                                result.total = 1.0 * result.total / (10 ** 18);
-                                result.fees = 1.0 * result.fees / (10 ** 18);
-                                result.gas_price = 1.0 * result.gas_price / (10 ** 18);
-                                result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
-                                result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
-                                if( result.total == 0)
-                                    result.alt_total = transaction.total;
-                                result.from_opensea = false;
-                                transaction = result;
-                                break;
-                            } catch (error) {
-                                console.log(error.message, "validating big price");
-                            }
-                        }
+                        // while( true) {
+                        //     try {
+                        //         let response = await axios.get(blockcypher_transaction_api + transaction.hash).catch(err => {
+                        //             throw err;
+                        //         });
+                        //         let result = response.data;
+                        //         result.total = 1.0 * result.total / (10 ** 18);
+                        //         result.fees = 1.0 * result.fees / (10 ** 18);
+                        //         result.gas_price = 1.0 * result.gas_price / (10 ** 18);
+                        //         result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
+                        //         result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
+                        //         if( result.total == 0)
+                        //             result.alt_total = transaction.total;
+                        //         result.from_opensea = false;
+                        //         transaction = result;
+                        //         break;
+                        //     } catch (error) {
+                        //         console.log(error.message, "validating big price");
+                        //     }
+                        // }
+                        await fetch_transaction_by_hash(log.transactionHash, transaction_history, log, transaction.total);
                     }
-                    addTransaction(transaction, true);
+                    else
+                        await addTransaction(transaction, true);
                 }
             }
             break;
@@ -192,7 +194,7 @@ export const addLog = async(log) => {
     }
 }
 
-export const fetch_transaction_by_hash = async(hash, oldTransaction, log) => {
+export const fetch_transaction_by_hash = async(hash, oldTransaction, log, alt_total = 0) => {
     if(global.fetch_transaction_pending.findIndex(element => element == hash) >= 0) {
         return;
     }
@@ -266,10 +268,12 @@ export const fetch_transaction_by_hash = async(hash, oldTransaction, log) => {
                 gas_tip_cap: 0,
                 gas_fee_cap: 0
             }
-            // if( 1.0 * result.total >= 1000){
-            //     result.alt_total = result.total;
-            //     result.total = 0;
-            // }
+            if( log.address == opensea_address) {
+                if( 1.0 * result.total == 0){
+                    result.alt_total = alt_total;
+                    result.total = 0;
+                }
+            }
 
             let isTrade = true;
             if( log.topics.length >=1 && log.topics[1] == "0x0000000000000000000000000000000000000000000000000000000000000000")
