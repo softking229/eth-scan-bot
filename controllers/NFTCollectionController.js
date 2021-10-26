@@ -137,6 +137,7 @@ export const getLogsByNFTCollection = async() => {
                 updating_collection.contractHash = nft_collection.contractHash;
             }
             updating_collection.lastCheckedBlock = lastBlock;
+            console.log("lastBlock:", lastBLock);
             await updating_collection.save();
         }
 
