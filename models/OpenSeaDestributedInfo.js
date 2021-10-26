@@ -4,10 +4,10 @@ var Schema = mongoose.Schema;
 
 var OpenSeaDestributedInfoModelSchema = new Schema({
     fromBlock: Number,
-    toBlock: Number,
+    toBlock: {type: Number, unique: true},
     finished: Boolean,
     deviceNumber: Number
 });
-OpenSeaDestributedInfoModelSchema.index({ fromBlock: 1, toBlock: 1 }, { unique: true })
+//OpenSeaDestributedInfoModelSchema.index({ fromBlock: 1, toBlock: 1 }, { unique: true })
 // Compile model from schema
 export default mongoose.model('OpenSeaDestributedInfo', OpenSeaDestributedInfoModelSchema);
