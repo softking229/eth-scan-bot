@@ -88,7 +88,7 @@ export const getLogsByNFTCollection = async() => {
                 module: "logs",
                 action: "getLogs",
                 address: nft_collection.contractHash,
-                fromBlock: nft_collection.lastCheckedBlock + 1,
+                fromBlock: 1 * nft_collection.lastCheckedBlock + 1,
                 toBlock: latestBlock,
             }
             const API_KEY = await wait_api_call_limit();
@@ -112,7 +112,7 @@ export const getLogsByNFTCollection = async() => {
                 continue;
             }
             let lastBlock = 0;
-            const unit = 3;
+            const unit = 6;
             let index = 0;
             let sublogs = [];
             while( index < logs.length) {
@@ -125,7 +125,6 @@ export const getLogsByNFTCollection = async() => {
                 }
                 await Promise.all(promise_array);
                 index += unit;
-                console.log(index);
             }
             if( logs.length >= 1000) 
                 lastBlock --;
@@ -139,7 +138,7 @@ export const getLogsByNFTCollection = async() => {
             }
             updating_collection.lastCheckedBlock = lastBlock;
             await updating_collection.save();
-            console.log("lastBlock:", lastBlock);
+            console.log("lastBlock:", lastBlock, updating_collection._id);
         }
 
         await Timer(1000);
