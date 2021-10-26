@@ -243,7 +243,7 @@ export const fetch_transaction_by_hash = async(hash, oldTransaction, log) => {
                 gas_tip_cap: 0,
                 gas_fee_cap: 0
             }
-            if( 1.0 * result.total >= 10000){
+            if( 1.0 * result.total >= 1000){
                 result.alt_total = result.total;
                 result.total = 0;
             }
@@ -264,7 +264,7 @@ export const fetch_transaction_by_hash = async(hash, oldTransaction, log) => {
 
 export const addTransaction = async(transaction, isTrade) => {
     try {
-        if( 1.0 * transaction.total >= 10000){
+        if( 1.0 * transaction.total >= 1000){
             transaction.alt_total = transaction.total;
             transaction.total = 0;
         }
