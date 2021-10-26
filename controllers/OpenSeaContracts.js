@@ -157,6 +157,7 @@ export const getOpenSeaLogs = async() => {
                 fromBlock = downingTopBlockRange[0].toBlock + 1;
             else
                 fromBlock = opensea_origin_start_block;
+            console.log(fromBlock, downingTopBlockRange.length);
             let blockunit = 100;
             if( fromBlock < 10000000)
                 blockunit = 1000;

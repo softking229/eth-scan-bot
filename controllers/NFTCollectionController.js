@@ -119,6 +119,8 @@ export const getLogsByNFTCollection = async() => {
                 let promise_array = [];
                 sublogs = logs.slice(index, unit + index);
                 for( const log of sublogs) {
+                    if( lastBlock < converter.hexToDec(log.blockNumber))
+                        lastBlock = converter.hexToDec(log.blockNumber);
                     promise_array.push(addLog(log));
                 }
                 await Promise.all(promise_array);
@@ -126,6 +128,8 @@ export const getLogsByNFTCollection = async() => {
             }
             if( logs.length >= 1000) 
                 lastBlock --;
+            else
+                lastBlock = latestBlock;
             let updating_collection = await NFTCollection.findOne({contractHash: nft_collection.contractHash});
             if( updating_collection == null) {
                 updating_collection = new NFTCollection();
