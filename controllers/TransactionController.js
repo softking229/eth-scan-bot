@@ -163,31 +163,18 @@ export const addLog = async(log) => {
                         timeStamp: log.timeStamp * 1000
                     };
                     let eth_trans_limit = 10;
-                    if( transaction.total > eth_trans_limit) {
+                    let eth_trans_limit_completely = 400;
+                    if( transaction.total > eth_trans_limit 
+                        && transaction.total < eth_trans_limit_completely) {
                         console.log("total is higher than ", eth_trans_limit);
-                        // while( true) {
-                        //     try {
-                        //         let response = await axios.get(blockcypher_transaction_api + transaction.hash).catch(err => {
-                        //             throw err;
-                        //         });
-                        //         let result = response.data;
-                        //         result.total = 1.0 * result.total / (10 ** 18);
-                        //         result.fees = 1.0 * result.fees / (10 ** 18);
-                        //         result.gas_price = 1.0 * result.gas_price / (10 ** 18);
-                        //         result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
-                        //         result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
-                        //         if( result.total == 0)
-                        //             result.alt_total = transaction.total;
-                        //         result.from_opensea = false;
-                        //         transaction = result;
-                        //         break;
-                        //     } catch (error) {
-                        //         console.log(error.message, "validating big price");
-                        //     }
-                        // }
                         await fetch_transaction_by_hash(log.transactionHash, transaction_history, log, transaction.total);
                     }
                     else {
+                        if( transaction.total >= eth_trans_limit_completely) {
+                            console.log("total is higher than ", eth_trans_limit_completely);
+                            transaction.alt_total = transaction.total;
+                            transaction.total = 0;
+                        }
                         console.log("total is less than ", eth_trans_limit);
                         await addTransaction(transaction, true);
                     }
