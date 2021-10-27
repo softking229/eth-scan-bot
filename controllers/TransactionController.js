@@ -162,8 +162,9 @@ export const addLog = async(log) => {
                         gas_price: log.gasPrice,
                         timeStamp: log.timeStamp * 1000
                     };
-                    if( transaction.total > 100) {
-                        console.log("total is higher than 100");
+                    let eth_trans_limit = 10;
+                    if( transaction.total > eth_trans_limit) {
+                        console.log("total is higher than ", eth_trans_limit);
                         // while( true) {
                         //     try {
                         //         let response = await axios.get(blockcypher_transaction_api + transaction.hash).catch(err => {
@@ -187,7 +188,7 @@ export const addLog = async(log) => {
                         await fetch_transaction_by_hash(log.transactionHash, transaction_history, log, transaction.total);
                     }
                     else {
-                        console.log("total is less than 100");
+                        console.log("total is less than ", eth_trans_limit);
                         await addTransaction(transaction, true);
                     }
                 }
