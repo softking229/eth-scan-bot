@@ -174,8 +174,7 @@ export const addLog = async(log) => {
                             console.log("total is higher than ", eth_trans_limit_completely);
                             transaction.alt_total = transaction.total;
                             transaction.total = 0;
-                        }
-                        console.log("total is less than ", eth_trans_limit);
+                        } else console.log("total is less than ", eth_trans_limit);
                         await addTransaction(transaction, true);
                     }
                 }
