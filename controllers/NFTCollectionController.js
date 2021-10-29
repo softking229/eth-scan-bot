@@ -90,7 +90,7 @@ export const getLogsByNFTCollection = async() => {
             await Timer(1000);
             continue;
         }
-        console.log(nft_collections.length,"nft collections found");
+        console.log(nft_collections.length, "nft collections found");
         for( const nft_collection of nft_collections) {
             let params = {
                 module: "logs",
