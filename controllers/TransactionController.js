@@ -8,7 +8,7 @@ import WatchList from '../models/WatchList.js'
 import { JSDOM } from "jsdom"
 import OnChainInfo from '../models/OnChainInfo.js'
 import Log from '../models/Log.js'
-import { opensea_address } from '../consts.js'
+import { opensea_address, topic0_transfer, topic1_mint } from '../consts.js'
 const { window } = new JSDOM()
 
 const Timer = util.promisify(setTimeout);
@@ -138,9 +138,34 @@ export const addLog = async(log) => {
     while( true) {
         try {
             await Log.create(log);
-            if( log.topics.length < 3) {
+            let transaction = {
+                from_opensea: true,
+                block_height: log.blockNumber,
+                hash: log.transactionHash,
+                fees: converter.hexToDec(log.gasPrice) / (10 ** 18) * converter.hexToDec(log.gasUsed),
+                gas_used: log.gasUsed,
+                gas_price: log.gasPrice,
+                timeStamp: log.timeStamp * 1000
+            };
+            if( log.topics[0] == topic0_mint
+                && log.topics[1] == topic1_mint){
+                addTransaction( transaction);
+                addWalletInfoToWatchList({
+                    address: "0x" + log.topics[2].substr(26),
+                    spent: 0,
+                    revenue: 0,
+                    nfts_bought: 0,
+                    nfts_sold: 0,
+                    mint: 1
+                });
                 return;
             }
+            if( log.topics[0] != topic_orders_matched
+                || log.address != opensea_address)
+                return;
+            let nft_from = "0x" + log.topics[1].substr(26);
+            let nft_to = "0x" + log.topics[2].substr(26);
+            let total = hexToDec(log.data.substr(130)) * 1.0 / (10 ** 18);
             let transaction_history = await TransactionHistory.findOne({hash: log.transactionHash});
             if( transaction_history) {
                 if( log.address != opensea_address && transaction_history.from_opensea)
@@ -154,8 +179,8 @@ export const addLog = async(log) => {
                         from_opensea: true,
                         block_height: log.blockNumber,
                         hash: log.transactionHash,
-                        addresses: ["0x" + log.topics[2].substr(26),
-                                    "0x" + log.topics[1].substr(26)],
+                        addresses: ["0x" + log.topics[1].substr(26),
+                                    "0x" + log.topics[2].substr(26)],
                         total: converter.hexToDec(log.data.substr(130)) * 1.0 / (10 ** 18),
                         fees: converter.hexToDec(log.gasPrice) / (10 ** 18) * converter.hexToDec(log.gasUsed),
                         gas_used: log.gasUsed,
@@ -281,10 +306,6 @@ export const fetch_transaction_by_hash = async(hash, oldTransaction, log, alt_to
 
 export const addTransaction = async(transaction, isTrade) => {
     try {
-        // if( 1.0 * transaction.total >= 1000){
-        //     transaction.alt_total = transaction.total;
-        //     transaction.total = 0;
-        // }
         let transaction_row = await TransactionHistory.findOne({hash: transaction.hash});
         if( transaction_row) {
             if( !isTrade) {
@@ -297,7 +318,8 @@ export const addTransaction = async(transaction, isTrade) => {
                     mint: 1
                 });
             }
-            if( transaction_row.from_opensea == true) {
+            if( transaction_row.from_opensea == true
+                && transaction.from_opensea == false) {
                 await TransactionHistory.updateOne({hash: transaction.hash}, transaction);
             }
             return;

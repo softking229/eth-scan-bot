@@ -9,13 +9,14 @@ import {getOnchainLatestBlocknumber, fetch_latest_blocknumber} from './controlle
 import util from 'util'
 import { getOpenSeaLogs } from './controllers/OpenSeaContracts.js'
 import { main as getNFTCollectionList, getLogsByNFTCollection} from './controllers/NFTCollectionController.js'
-
+import { exit } from 'process';
+import Log from './models/Log.js';
 
 const Timer = util.promisify(setTimeout);
 
 dotenv.config({ silent: process.env.NODE_ENV === 'production' });
 
-const DB_URL = process.env.DB_URL || "mongodb://74.208.208.141:27017/onchain";
+const DB_URL = process.env.DB_URL// || "mongodb://74.208.208.141:27017/onchain";
 // Initialize DB connection
 try {
     await mongoose.connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true});
@@ -30,8 +31,9 @@ global.deviceNumber = await checkDeviceInfo();
 
 await fetch_latest_blocknumber();
 
-// getNFTCollectionList();
-// getLogsByNFTCollection();
+getNFTCollectionList();
+getLogsByNFTCollection();
+getLogsByNFTCollection();
 getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {

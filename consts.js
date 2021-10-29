@@ -1,14 +1,13 @@
 export const opensea_address = '0x7be8076f4ea4a4ad08075c2508e481d6c946d12b';
 export const topic_orders_matched = '0xc4109843e0b7d514e4c093114b863f8e7d8d9a458c372cd51bfe526b588006c9';
+export const topic0_transfer = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+export const topic0_OwnershipTransferred = '0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0';
+export const topic1_mint = '0x0000000000000000000000000000000000000000000000000000000000000000'
 export const etherscan_apikeys = [
     'MW1S4915IBF3ZZMFNKUEIUWTQPDRG3JK45',
     'QAEBGW7N8B7WYBFE85CPJTZ83EVAPFRUYW',
     'CUWP9CGZEG4FTWYUHK7C5MNVQMEJK7YGPK',
     'RM5M49AMJKR63A8DM35QJE34GG6HX3KIYM',
-    // 'JJZDU87JKJWPD3ARPEWNFBI16M4SPH178F',
-    // 'RPE98VI1TI9T3487E7PB682Y875EW4INFY',
-    // 'HQBW428I6RTJCASVQZVXGE9D82V8HZ2V7C',
-    // '54QSJF6KKK43R4R3D8F463FXN25Z16PVC1',
     'IWE8W3ZDTV6JBET2FMUDI71HSWTV4MSYNZ',
     '8RZYH5G4KK3IYBT2Z4J9F6NXT4TM6XC2DB',
     'RI56DJ5JCPPNGH8JSF7HN2426EBUXP916N',
@@ -37,4 +36,4 @@ export const etherscan_apikeys = [
 ]
 export const opensea_api = 'https://api.opensea.io/api'
 export const blockcypher_transaction_api = 'https://api.blockcypher.com/v1/eth/main/txs/';
-export const opensea_origin_start_block = 5779378;
+export const opensea_origin_start_block = 13500979;//5779378;

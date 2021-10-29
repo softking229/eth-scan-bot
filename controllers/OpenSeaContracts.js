@@ -10,6 +10,8 @@ import abiDecoder from '../utils/abi-decoder.js'
 import util from 'util'
 import { JSDOM } from "jsdom"
 import { allowedNodeEnvironmentFlags } from 'process'
+import OpenSeaContractLog from '../models/OpenSeaContractLog.js'
+import OpenSeaLog from '../models/OpenSeaLog.js'
 const { window } = new JSDOM()
 const Timer = util.promisify(setTimeout);
 
@@ -34,37 +36,44 @@ export const checkDeviceInfo = async() => {
     return device_info.number;
 }
 
-export const fetch_transactions = async(params) => {
+export const fetch_add_opensea_logs = async(params) => {
     let start = window.performance.now();
+    params.module = "logs";
+    params.action = "getLogs";
+    params.address = opensea_address;
+    params.topic0 = topic_orders_matched;
     const API_URL = process.env.API_URL;
-    const API_KEY = await wait_api_call_limit();
     let last_scrapped_block = params.fromBlock * 1;
     const origin_from_block = last_scrapped_block;
     let transaction_count = 0;
-    Object.assign(params, {apikey: API_KEY});
-    let opensea_nft_tx_list;
+    let opensea_logs;
     while(true) {
         params.fromBlock = last_scrapped_block;
         while( true) {
             try{
+                const API_KEY = await wait_api_call_limit();
+                params.apikey = API_KEY;
                 let result = await axios.get(API_URL, {params}).catch(err => {
                     throw err;
                 });
-                opensea_nft_tx_list = result.data.result;
+                opensea_logs = result.data.result;
                 break;
             } catch(err) {
                 console.log("Please check your network");
             }
         }
-        for(const opensea_nft_tx of opensea_nft_tx_list) {
+        for(const opensea_nft_tx of opensea_logs) {
             if( typeof(opensea_nft_tx) != "object")
                 continue;
-            addLog(opensea_nft_tx);
+            // await addLog(opensea_nft_tx);
             if( last_scrapped_block < converter.hexToDec(opensea_nft_tx.blockNumber))
                 last_scrapped_block = converter.hexToDec(opensea_nft_tx.blockNumber);
         }
-        transaction_count +=opensea_nft_tx_list.length;
-        if( opensea_nft_tx_list.length < 1000)
+        try {
+            await OpenSeaContractLog.insertMany(opensea_logs, {ordered: false});
+        } catch (error) {}
+        transaction_count +=opensea_logs.length;
+        if( opensea_logs.length < 1000)
             break;
     }
     let end = window.performance.now();
@@ -90,7 +99,7 @@ export const getOpenSeaLogs = async() => {
         if( result) {
             param.fromBlock = result.fromBlock;
             param.toBlock = result.toBlock;
-            console.log(await fetch_transactions(param));
+            console.log(await fetch_add_opensea_logs(param));
             result.finished = true;
             await result.save();
             continue;
@@ -98,60 +107,6 @@ export const getOpenSeaLogs = async() => {
             const {lastBlock:latestBlock} = await OnChainInfo.findOne();
             let fromBlock, toBlock = latestBlock;
             const mod = global.deviceNumber % 2;
-            // let addFields = { "$addFields": { "mod": { "$mod": ["$deviceNumber", 2] } } };
-            // let match = { "$match": {"mod": 1, finished: false} };
-            // let sort = { "$sort": {blockNumber: 1}};
-            // let limit = { "$limit": 1 };
-            // const downingTopBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
-            //                                                                     {"$match": {"mod": 0}},
-            //                                                                     { "$sort": {fromBlock: -1}},
-            //                                                                     limit]).exec();
-            // const downingBottomBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
-            //                                                                         {"$match": {"mod": 0}},
-            //                                                                         { "$sort": {fromBlock: 1}},
-            //                                                                         limit]).exec();
-            // const upingTopBlockRange = await OpenSeaDestributedInfo.aggregate([addFields,
-            //                                                                     {"$match": {"mod": 1}},
-            //                                                                     { "$sort": {fromBlock: -1}},
-            //                                                                     limit]).exec();
-            // fromBlock = opensea_origin_start_block;
-            // toBlock = latestBlock;
-            // if( upingTopBlockRange.length) {
-            //     fromBlock = upingTopBlockRange[0].toBlock + 1;
-            // }
-            // if( downingTopBlockRange.length) {
-            //     let earsePart = {down: downingBottomBlockRange[0].fromBlock, up: downingTopBlockRange[0].toBlock};
-            //     if( earsePart.up < fromBlock) {
-            //     } else if( earsePart.down > toBlock){}
-            //     else if( earsePart.down <= fromBlock) {
-            //         if( earsePart.up >= toBlock) {
-            //             fromBlock = 0;
-            //             toBlock = -1;
-            //         } else {
-            //             fromBlock = earsePart.up + 1;
-            //         }
-            //     } else {
-            //         if( earsePart.up >= toBlock) {
-            //             toBlock = earsePart.down - 1;
-            //         } else{
-            //             if( mod) toBlock = earsePart.down - 1;
-            //             else {
-            //                 fromBlock = earsePart.up + 1;
-            //             }
-            //         }
-            //     }
-            // }
-            // let blockunit = 100;
-            // if( toBlock < 10000000)
-            //     blockunit = 1000;
-            // if( !mod) {
-            //     if( fromBlock <= toBlock - blockunit)
-            //         fromBlock = toBlock - blockunit + 1;
-            // }
-            // else{
-            //     if( toBlock >= fromBlock + blockunit - 1)
-            //         toBlock = fromBlock + blockunit - 1;
-            // }
             const downingTopBlockRange = await OpenSeaDestributedInfo.find({}).sort({toBlock: -1}).limit(1).exec();
             if( downingTopBlockRange.length)
                 fromBlock = downingTopBlockRange[0].toBlock + 1;
@@ -182,13 +137,19 @@ export const getOpenSeaLogs = async() => {
                     deviceNumber: global.deviceNumber});
                 param.fromBlock = fromBlock;
                 param.toBlock = toBlock;
-                console.log(await fetch_transactions(param));
+                console.log(await fetch_add_opensea_logs(param));
                 await OpenSeaDestributedInfo.updateOne({fromBlock: fromBlock}, {finished: true});
-                continue;
             }catch(err) {
                 console.log(err.message);
                 continue;
             }
         }
     }
+}
+
+export const getOpenseaLastBlockNumber = async() => {
+    const result = await OpenSeaDestributedInfo.find({finished: true}).sort({fromBlock: -1}).limit(1);
+    if( !result || !result.length)
+        return -1;
+    return result[0].toBlock;
 }

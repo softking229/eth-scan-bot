@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 var Schema = mongoose.Schema;
 
-var LogModelSchema = new Schema({
+var OpenSeaLogModelSchema = new Schema({
     address: String,
     topics: Array,
     topicsLength: Number,
@@ -17,7 +17,7 @@ var LogModelSchema = new Schema({
     tokenID: {type: Number, default: -1}
 });
 
-LogModelSchema.index({ logIndex: 1, transactionHash: 1}, { unique: true });
+OpenSeaLogModelSchema.index({ logIndex: 1, transactionHash: 1}, { unique: true });
 
 // Compile model from schema
-export default mongoose.model('Log', LogModelSchema );
+export default mongoose.model('OpenSeaLog', OpenSeaLogModelSchema );

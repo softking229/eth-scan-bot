@@ -16,7 +16,7 @@ var TransactionHistoryModelSchema = new Schema({
     // gasPrice: Number,
     // gasUsed: Number
     from_opensea: { type: Boolean, default: false},
-    block_hash: { type: String, default: ""},
+    block_hash: String,
     block_height: Number,
     block_index: Number,
     hash: {type: String, uniqe: true},
@@ -36,7 +36,7 @@ var TransactionHistoryModelSchema = new Schema({
     double_spend: Boolean,
     vin_sz: Number,
     vout_sz: Number,
-    internal_txids: {type: Array, default: []},
+    internal_txids: Array,
     confirmations: Number,
     confidence: Number,
     inputs: Array,
