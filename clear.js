@@ -14,9 +14,9 @@ try {
     process.exit(0);
 }
 
-let device_info = fs.readJsonSync("device_info.json");
-device_info = {"number":0};
-fs.writeJsonSync("device_info.json", device_info);
+let device_info = {"number":0};
+if( fs.existsSync("device_info.json"))
+    fs.writeJsonSync("device_info.json", device_info);
 
 try {
     await mongoose.connection.db.dropCollection("logs");

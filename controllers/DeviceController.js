@@ -8,7 +8,14 @@ export const getTotalDevices = async() => {
 }
 
 export const checkDeviceInfo = async() => {
-    let device_info = fs.readJsonSync("device_info.json");
+    let device_info = {
+        number: 0
+    };
+    if( !fs.existsSync("device_info.json")) {
+        fs.createFileSync("device_info.json");
+        fs.writeJsonSync("device_info.json", device_info);
+    }
+    else device_info = fs.readJsonSync("device_info.json");
     console.log("My Device Number is ", device_info.number);
     let success = false;
     while( !success) {
