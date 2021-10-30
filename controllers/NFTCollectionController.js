@@ -35,7 +35,7 @@ async function scrap_etherscan(page) {
     if( urls && urls.length)
         for( const url of urls) {
             try{
-                let nftCollection = new NFTCollection({contractHash: url, lastCheckedBlock: -1});
+                let nftCollection = new NFTCollection({contractHash: url, lastCheckedBlock: -1, firstBlock: 0});
                 await nftCollection.save();
                 let logs;
                 let params = {
@@ -62,11 +62,13 @@ async function scrap_etherscan(page) {
                         console.log(err.message, "calling api in scrap_etherscan");
                     }
                 }
-                nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
-                try{
-                    await nftCollection.save();
-                } catch(err) {
-                    console.log(err.message, "updating nftCollection in scrap_etherscan");
+                if( logs.length) {
+                    nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
+                    try{
+                        await nftCollection.save();
+                    } catch(err) {
+                        console.log(err.message, "updating nftCollection in scrap_etherscan");
+                    }
                 }
             } catch(err) {
                 console.log(err.message, "creating nftCollection in scrap_etherscan");
