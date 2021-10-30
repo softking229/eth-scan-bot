@@ -52,8 +52,10 @@ async function scrap_etherscan(page) {
                             throw err;
                         });
                         logs = result.data.result;
-                        if( result.data.status != "1")
+                        if( result.data.status != "1"){
+                            console.log( result.data, "calling api in scrap_etherscan");
                             continue;
+                        }
                         break;
                     } catch(err) {
                         console.log(err.message, "calling api in scrap_etherscan");
