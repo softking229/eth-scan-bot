@@ -13,8 +13,6 @@ import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 const Timer = util.promisify(setTimeout);
 
 async function scrap_etherscan(page) {
-    if( page > 10)
-        process.exit(0);
     const API_URL = process.env.API_URL;
     let html;
     while(true) {
