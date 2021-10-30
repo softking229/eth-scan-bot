@@ -5,7 +5,7 @@ import morgan from 'morgan'
 import dotenv from "dotenv";
 import routes from './routes/index.js'
 import {checkDeviceInfo} from './controllers/DeviceController.js'
-import {getOnchainLatestBlocknumber, fetch_latest_blocknumber} from './controllers/TransactionController.js'
+import {getOnchainLatestBlocknumber, fetch_latest_blocknumber, set_api_keys } from './controllers/TransactionController.js'
 import util from 'util'
 import { getOpenSeaLogs } from './controllers/OpenSeaContracts.js'
 import { main as getNFTCollectionList, getLogsByNFTCollection} from './controllers/NFTCollectionController.js'
@@ -28,13 +28,14 @@ try {
 
 global.fetch_transaction_pending = [];
 global.deviceNumber = await checkDeviceInfo();
+set_api_keys();
 
 await fetch_latest_blocknumber();
 
 getNFTCollectionList();
-getLogsByNFTCollection();
-getLogsByNFTCollection();
-getOpenSeaLogs();
+//getLogsByNFTCollection();
+//getLogsByNFTCollection();
+//getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
     // Setup Express
@@ -45,8 +46,8 @@ if( global.deviceNumber == 1) {
     app.use(morgan('combined'));
     app.use('/', routes);
 
-    app.listen(PORT, () => {
-        console.log(`app listening at http://localhost:${PORT}`)
-    });
+    // app.listen(PORT, () => {
+    //     console.log(`app listening at http://localhost:${PORT}`)
+    // });
     getOnchainLatestBlocknumber();
 }

@@ -13,6 +13,10 @@ import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 const Timer = util.promisify(setTimeout);
 
 async function scrap_etherscan(page) {
+    exit(0);
+    if( page >= 10)
+        process.exit(0);
+    const API_URL = process.env.API_URL;
     let html;
     while(true) {
         try {
@@ -33,8 +37,39 @@ async function scrap_etherscan(page) {
     if( urls && urls.length)
         for( const url of urls) {
             try{
-                await NFTCollection.create({contractHash: url, lastCheckedBlock: -1});
-            } catch(err) {}
+                let nftCollection = new NFTCollection({contractHash: url, lastCheckedBlock: -1});
+                await nftCollection.save();
+                let logs;
+                let params = {
+                    module: "logs",
+                    action: "getLogs",
+                    address: nftCollection.contractHash,
+                    fromBlock: 0,
+                    toBlock: "latest"
+                };
+                params.apikey = await wait_api_call_limit();
+                while(true) {
+                    try{
+                        let result = await axios.get(API_URL, {params}).catch(err => {
+                            throw err;
+                        });
+                        logs = result.data.result;
+                        if( result.data.status != "1")
+                            continue;
+                        break;
+                    } catch(err) {
+                        // console.log(err.message, "scrap_etherscan");
+                    }
+                }
+                nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
+                try{
+                    await nftCollection.save();
+                } catch(err) {
+                    // console.log(err.message, "scrap_etherscan");
+                }
+            } catch(err) {
+                // console.log(err.message, "scrap_etherscan");
+            }
         }
     console.log("page: ", page);
     return urls?urls.length:0;

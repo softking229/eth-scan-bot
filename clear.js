@@ -1,14 +1,6 @@
 import fs from 'fs-extra'
 import mongoose from 'mongoose';
 import dotenv from "dotenv";
-import NFTCollection from './models/NFTCollection.js'
-import OnChainInfo from './models/OnChainInfo.js'
-import OpenSeaDestributedInfo from './models/OpenSeaDestributedInfo.js'
-import OpenSeaDeviceInfo from './models/OpenSeaDeviceInfo.js'
-import TransactionHistory from './models/TransactionHistory.js'
-import WatchList from './models/WatchList.js'
-import OpenSeaContractLog from './models/OpenSeaContractLog.js'
-import Log from './models/Log.js'
 
 dotenv.config({ silent: process.env.NODE_ENV === 'production' });
 

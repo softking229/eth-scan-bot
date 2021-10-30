@@ -2,20 +2,27 @@ import axios from 'axios'
 import converter from 'hex2dec'
 import abiDecoder from '../utils/abi-decoder.js'
 import util from 'util'
-import { etherscan_apikeys, opensea_api, blockcypher_transaction_api } from '../consts.js'
+import { etherscan_apikeys_store, etherscan_apikeys_device_cnt, opensea_api, blockcypher_transaction_api, opensea_address, topic0_transfer, topic1_mint } from '../consts.js'
 import TransactionHistory from '../models/TransactionHistory.js'
 import WatchList from '../models/WatchList.js'
 import { JSDOM } from "jsdom"
 import OnChainInfo from '../models/OnChainInfo.js'
 import Log from '../models/Log.js'
-import { opensea_address, topic0_transfer, topic1_mint } from '../consts.js'
 const { window } = new JSDOM()
 
 const Timer = util.promisify(setTimeout);
 
-const max_api_calls = 5;
-global.current_api_calls = (new Array(etherscan_apikeys.length)).fill(0);
-console.log("Current API calls", global.current_api_calls);
+const max_api_calls = 1;
+let etherscan_apikeys = [];
+
+export const set_api_keys = () => {
+    for( let i = global.deviceNumber % etherscan_apikeys_device_cnt; i < etherscan_apikeys_store.length; i += etherscan_apikeys_device_cnt) {
+        etherscan_apikeys.push(etherscan_apikeys_store[i]);
+    }
+    console.log(etherscan_apikeys.length);
+    global.current_api_calls = (new Array(etherscan_apikeys.length)).fill(0);
+    console.log("Current API calls", global.current_api_calls);
+}
 
 var get_token_info = async (input) => {
     try{
@@ -46,9 +53,8 @@ var get_token_info = async (input) => {
 
 export const wait_api_call_limit = async() => {
     while(true){
-        let i = global.deviceNumber % 5;
-        let min_id = i;
-        for(; i < current_api_calls.length; i += 5) {
+        let min_id = 0;
+        for(let i; i < current_api_calls.length; i ++) {
             if(current_api_calls[i] < current_api_calls[min_id]){
                 min_id = i;
             }
