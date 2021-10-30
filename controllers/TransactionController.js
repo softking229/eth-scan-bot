@@ -8,10 +8,11 @@ import WatchList from '../models/WatchList.js'
 import { JSDOM } from "jsdom"
 import OnChainInfo from '../models/OnChainInfo.js'
 import Log from '../models/Log.js'
+import {Mutex, Semaphore, withTimeout} from 'async-mutex';
 const { window } = new JSDOM()
 
 const Timer = util.promisify(setTimeout);
-
+const mutex = new Mutex();
 const max_api_calls = 1;
 let etherscan_apikeys = [];
 
@@ -51,20 +52,35 @@ var get_token_info = async (input) => {
 }
 
 export const wait_api_call_limit = async() => {
-    while(true){
-        let min_id = 0;
-        for(let i; i < current_api_calls.length; i ++) {
-            if(current_api_calls[i] < current_api_calls[min_id]){
-                min_id = i;
+    let key;
+    const release = await mutex.acquire();
+    try {
+        while(true){
+            let min_id = 0;
+            for(let i = 0; i < current_api_calls.length; i ++) {
+                if(current_api_calls[i] < current_api_calls[min_id]){
+                    min_id = i;
+                }
             }
+            // console.log("min_id:", min_id, current_api_calls[min_id]);
+            if(current_api_calls[min_id] < max_api_calls){
+                current_api_calls[min_id] ++;
+                setTimeout(() => current_api_calls[min_id] --, 1100);
+                key = etherscan_apikeys[min_id];
+                break;
+            }
+            await Timer(10);
         }
-        if(current_api_calls[min_id] < max_api_calls){
-            current_api_calls[min_id] ++;
-            setTimeout(() => current_api_calls[min_id] --, 1100);
-            return etherscan_apikeys[min_id];
+    } catch(err){}
+    while(true) {
+        try {
+            await release();
+            break;
+        } catch(err) {
+            console.log(err.message, "in mutex release of wait_api")
         }
-        await Timer(10);
     }
+    return key;
 }
 
 axios.interceptors.request.use( request => {

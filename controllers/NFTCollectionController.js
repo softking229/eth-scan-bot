@@ -13,7 +13,7 @@ import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 const Timer = util.promisify(setTimeout);
 
 async function scrap_etherscan(page) {
-    const API_URL = process.env.API_URL;
+    console.log(123);
     let html;
     while(true) {
         try {
@@ -32,51 +32,65 @@ async function scrap_etherscan(page) {
         }
     }
     const urls = html.data.match(/(?<=token\/)0x[a-zA-Z0-9]+/g);
-    if( urls && urls.length)
-        for( const url of urls) {
-            try{
-                let nftCollection = new NFTCollection({contractHash: url, lastCheckedBlock: -1, firstBlock: 0});
-                await nftCollection.save();
-                let logs;
-                let params = {
-                    module: "logs",
-                    action: "getLogs",
-                    address: nftCollection.contractHash,
-                    fromBlock: 0,
-                    toBlock: "latest"
-                };
-                params.apikey = await wait_api_call_limit();
-                while(true) {
-                    try{
-                        let result = await axios.get(API_URL, {params}).catch(err => {
-                            throw err;
-                        });
-                        logs = result.data.result;
-                        if( result.data.status != "1"
-                        && result.data.message != "No records found"){
-                            console.log( result.data, page, nftCollection.contractHash, "calling api in scrap_etherscan");
-                            continue;
-                        }
-                        break;
-                    } catch(err) {
-                        console.log(err.message, "calling api in scrap_etherscan");
-                    }
-                }
-                if( !logs.length)
-                    nftCollection.firstBlock = await getDatabaseLatestBlockNumber();
-                else
-                    nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
-                try{
-                    await nftCollection.save();
-                } catch(err) {
-                    console.log(err.message, "updating nftCollection in scrap_etherscan");
-                }
-            } catch(err) {
-                console.log(err.message, "creating nftCollection in scrap_etherscan");
+    if( urls && urls.length) {
+        let unit = 3;
+        for( let index = 0; index < urls.length; index += unit) {
+            let sub_urls = urls.slice( index, index + unit);
+            let promise_array = [];
+            for( let i = 0; i < sub_urls.length; i ++) {
+                promise_array.push(check_nft_collection_data(sub_urls[i], page));
             }
+            await Promise.all(promise_array);
         }
+        for( const url of urls) {
+        }
+    }
     console.log("page: ", page);
     return urls?urls.length:0;
+}
+
+export const check_nft_collection_data = async(url, page = 0) => {
+    const API_URL = process.env.API_URL;
+    try{
+        let nftCollection = new NFTCollection({contractHash: url, lastCheckedBlock: -1, firstBlock: 0});
+        await nftCollection.save();
+        let logs;
+        let params = {
+            module: "logs",
+            action: "getLogs",
+            address: nftCollection.contractHash,
+            fromBlock: 0,
+            toBlock: "latest"
+        };
+        params.apikey = await wait_api_call_limit();
+        while(true) {
+            try{
+                let result = await axios.get(API_URL, {params}).catch(err => {
+                    throw err;
+                });
+                logs = result.data.result;
+                if( result.data.status != "1"
+                && result.data.message != "No records found"){
+                    console.log( result.data, page, nftCollection.contractHash, "calling api in scrap_etherscan");
+                    continue;
+                }
+                break;
+            } catch(err) {
+                console.log(err.message, "calling api in scrap_etherscan");
+            }
+        }
+        if( !logs.length)
+            nftCollection.firstBlock = await getDatabaseLatestBlockNumber();
+        else
+            nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
+        try{
+            await nftCollection.save();
+        } catch(err) {
+            console.log(err.message, "updating nftCollection in scrap_etherscan");
+        }
+    } catch(err) {
+        console.log(err.message, "creating nftCollection in scrap_etherscan");
+    }
 }
 
 export const main = async() => {
