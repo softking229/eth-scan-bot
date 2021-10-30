@@ -79,8 +79,10 @@ export const check_nft_collection_data = async(url, page = 0) => {
                 console.log(err.message, "calling api in scrap_etherscan");
             }
         }
-        if( !logs.length)
+        if( !logs.length) {
             nftCollection.firstBlock = await getDatabaseLatestBlockNumber();
+            console.log("getDatabaseLatestBlockNumber", nftCollection.firstBlock);
+        }
         else
             nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
         try{
