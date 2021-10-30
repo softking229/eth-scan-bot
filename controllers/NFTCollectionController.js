@@ -26,6 +26,7 @@ async function scrap_etherscan(page) {
             })
             break;
         } catch (error) {
+            console.log(error.message, "in scrapping token-nft page");
             await Timer(1000);
             continue;
         }
@@ -55,17 +56,17 @@ async function scrap_etherscan(page) {
                             continue;
                         break;
                     } catch(err) {
-                        // console.log(err.message, "scrap_etherscan");
+                        console.log(err.message, "calling api in scrap_etherscan");
                     }
                 }
                 nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
                 try{
                     await nftCollection.save();
                 } catch(err) {
-                    // console.log(err.message, "scrap_etherscan");
+                    console.log(err.message, "updating nftCollection in scrap_etherscan");
                 }
             } catch(err) {
-                // console.log(err.message, "scrap_etherscan");
+                console.log(err.message, "creating nftCollection in scrap_etherscan");
             }
         }
     console.log("page: ", page);

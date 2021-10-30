@@ -19,9 +19,8 @@ export const set_api_keys = () => {
     for( let i = global.deviceNumber % etherscan_apikeys_device_cnt; i < etherscan_apikeys_store.length; i += etherscan_apikeys_device_cnt) {
         etherscan_apikeys.push(etherscan_apikeys_store[i]);
     }
-    console.log(etherscan_apikeys.length);
     global.current_api_calls = (new Array(etherscan_apikeys.length)).fill(0);
-    console.log("Current API calls", global.current_api_calls);
+    // console.log("Current API calls", global.current_api_calls);
 }
 
 var get_token_info = async (input) => {

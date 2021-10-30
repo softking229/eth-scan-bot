@@ -2,6 +2,7 @@ export const opensea_address = '0x7be8076f4ea4a4ad08075c2508e481d6c946d12b';
 export const topic_orders_matched = '0xc4109843e0b7d514e4c093114b863f8e7d8d9a458c372cd51bfe526b588006c9';
 export const topic0_transfer = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 export const topic0_OwnershipTransferred = '0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0';
+export const topic0_AuctionSuccessful = '0x4fcc30d90a842164dd58501ab874a101a3749c3d4747139cefe7c876f4ccebd2'
 export const topic1_mint = '0x0000000000000000000000000000000000000000000000000000000000000000'
 //export const etherscan_apikeys = [];
 export const etherscan_apikeys_device_cnt = 4;
