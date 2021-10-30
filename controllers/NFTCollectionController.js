@@ -53,7 +53,7 @@ async function scrap_etherscan(page) {
                         });
                         logs = result.data.result;
                         if( result.data.status != "1"){
-                            console.log( result.data, "calling api in scrap_etherscan");
+                            console.log( result.data, nftCollection.contractHash, "calling api in scrap_etherscan");
                             continue;
                         }
                         break;
