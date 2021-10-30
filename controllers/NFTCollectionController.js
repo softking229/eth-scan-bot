@@ -26,7 +26,7 @@ async function scrap_etherscan(page) {
             })
             break;
         } catch (error) {
-            console.log(error.message, "in scrapping token-nft page");
+            console.log(error.message, "in scrapping token-nft page", page);
             await Timer(1000);
             continue;
         }
@@ -81,7 +81,7 @@ export const check_nft_collection_data = async(url, page = 0) => {
         }
         if( !logs.length) {
             nftCollection.firstBlock = await getDatabaseLatestBlockNumber();
-            console.log("getDatabaseLatestBlockNumber", nftCollection.firstBlock);
+            // console.log("getDatabaseLatestBlockNumber", nftCollection.firstBlock);
         }
         else
             nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
