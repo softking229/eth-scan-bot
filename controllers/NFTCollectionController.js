@@ -3,7 +3,7 @@ import converter from 'hex2dec'
 import util from 'util'
 import NFTCollection from '../models/NFTCollection.js'
 import {getTotalDevices} from "./DeviceController.js"
-import {getOnchainLatestBlockNumber, wait_api_call_limit, addLog} from "./TransactionController.js"
+import {getDatabaseLatestBlockNumber, wait_api_call_limit, addLog} from "./TransactionController.js"
 import TransactionHistory from '../models/TransactionHistory.js'
 import { topic1_mint } from '../consts.js'
 import { addWalletInfoToWatchList } from './TransactionController.js'
@@ -62,13 +62,14 @@ async function scrap_etherscan(page) {
                         console.log(err.message, "calling api in scrap_etherscan");
                     }
                 }
-                if( logs.length) {
+                if( !logs.length)
+                    nftCollection.firstBlock = await getDatabaseLatestBlockNumber();
+                else
                     nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
-                    try{
-                        await nftCollection.save();
-                    } catch(err) {
-                        console.log(err.message, "updating nftCollection in scrap_etherscan");
-                    }
+                try{
+                    await nftCollection.save();
+                } catch(err) {
+                    console.log(err.message, "updating nftCollection in scrap_etherscan");
                 }
             } catch(err) {
                 console.log(err.message, "creating nftCollection in scrap_etherscan");
@@ -97,7 +98,7 @@ export const getLogsByNFTCollection = async() => {
     while(true) {
         const total_device_count = await getTotalDevices();
         const mod = global.deviceNumber % total_device_count;
-        // const latestBlock = await getOnchainLatestBlockNumber();
+        // const latestBlock = await getDatabaseLatestBlockNumber();
         const latestBlock = await getOpenseaLastBlockNumber();
         const nft_collections = await NFTCollection.aggregate([
             {
