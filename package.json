@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node main.js",
     "clear": "node clear.js",
-    "clear-device": "node clear_device.js"
+    "clear-device": "node clear_device.js",
+    "device-register": "node device_register.js"
   },
   "author": "",
   "license": "ISC",
