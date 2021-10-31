@@ -13,13 +13,13 @@ import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 const Timer = util.promisify(setTimeout);
 
 async function scrap_etherscan(page) {
-    console.log(123);
     let html;
     while(true) {
         try {
             html = await axios.get("https://etherscan.io/tokens-nft", {
                 params: {
-                    p: page
+                    p: page,
+                    ps:100
                 }
             }).catch(error => {
                 throw error
@@ -31,7 +31,19 @@ async function scrap_etherscan(page) {
             continue;
         }
     }
-    const urls = html.data.match(/(?<=token\/)0x[a-zA-Z0-9]+/g);
+    //const urls = html.data.match(/(?<=token\/)0x[a-zA-Z0-9]+/g);
+    const tr_list = html.data.match(/<tr[\s\S]*?<\/tr>/g);
+    if( !tr_list
+    || tr_list.length <= 1) {
+        global.nft_collection_stop_sign = true;
+        return 0;
+    }
+    tr_list.shift();
+    for( const tr of tr_list) {
+        const td_list = tr.match(/<td[\s\S]*?<\/td>/g);
+        console.log(td_list);
+    }
+    process.exit(0);
     if( urls && urls.length) {
         let unit = 3;
         for( let index = 0; index < urls.length; index += unit) {
@@ -50,6 +62,7 @@ async function scrap_etherscan(page) {
 }
 
 export const check_nft_collection_data = async(url, page = 0) => {
+    global.nft_collection_stop_sign = false;
     const API_URL = process.env.API_URL;
     try{
         let nftCollection = new NFTCollection({contractHash: url, lastCheckedBlock: -1, firstBlock: 0});

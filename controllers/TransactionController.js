@@ -406,11 +406,10 @@ export const getOnchainLatestBlocknumber = async() => {
 
 export const fetch_latest_blocknumber = async() => {
     const API_URL = process.env.API_URL;
-    const API_KEY = await wait_api_call_limit();
     const params = {
         module: "proxy",
         action: "eth_blockNumber",
-        apikey: API_KEY
+        apikey: "DSCNI3CR3TAY18RX53M95GEBRECU8TS273"
     }
     let latest_onchain_blocknumber;
     while(true) {
@@ -429,16 +428,42 @@ export const fetch_latest_blocknumber = async() => {
             await Timer(1000);
         }
     }
+    let latest_onchain_timestamp;
+    params.module = "block";
+    params.action = "getblockreward";
+    params.blockno = converter.decToHex(latest_onchain_blocknumber);
+    while(true) {
+        try{
+            let result = await axios( API_URL, {params}).catch(err => {
+                throw err;
+            });
+            if( result.data === undefined || result.data.result === undefined || result.data.result == "Max rate limit reached"){
+                await Timer(1000);
+                continue;
+            }
+            latest_onchain_timestamp = result.data.timeStamp;
+            break;
+        } catch(err) {
+            console.log(err.message, "fetch_latest_timestamp");
+            await Timer(1000);
+        }
+    }
     let result = await OnChainInfo.findOne({});
     if( result == null) {
-        result = new OnChainInfo({lastBlock: latest_onchain_blocknumber});
+        result = new OnChainInfo({lastBlock: latest_onchain_blocknumber, timeStamp:latest_onchain_timestamp});
     }
-    else
+    else {
         result.lastBlock = latest_onchain_blocknumber;
+        result.timeStamp = latest_onchain_timestamp;
+    }
     await result.save();
     return latest_onchain_blocknumber;
 }
 export const getDatabaseLatestBlockNumber = async() => {
     const {lastBlock:latestBlock} = await OnChainInfo.findOne();
     return latestBlock;
+}
+export const getDatabaseLatestTimeStamp = async() => {
+    const {timeStamp:timeStamp} = await OnChainInfo.findOne();
+    return timeStamp;
 }

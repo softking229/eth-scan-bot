@@ -35,7 +35,9 @@ export const etherscan_apikeys_store = [
     'QXIFXTJ2BHWZG3166B9SSWT1IWVHBVKWDU',
     'H4YUDZENCQRB9VCVPA9C72FSKWPJYVU8QP',
     'NIDKGQZGTJP9J8KGRA3AAK3K1K1FHXRFIW',
-    'SC1KE5CVBBS6C5NCFUQE46AEJT4XDEKBMH'
+    'SC1KE5CVBBS6C5NCFUQE46AEJT4XDEKBMH',
+    'M32F8DEIBBA4SKWBVZYET5NRQU2KBII8XQ',
+    'ISBSMW6JJMTKPZUE3RFSAD4K3SUK823JNY'
 ]
 export const opensea_api = 'https://api.opensea.io/api'
 export const blockcypher_transaction_api = 'https://api.blockcypher.com/v1/eth/main/txs/';
