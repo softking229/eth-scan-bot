@@ -1,16 +1,8 @@
 import mongoose from 'mongoose';
 import autoIncrement from 'mongoose-auto-increment'
-import express from 'express'
-import morgan from 'morgan'
 import dotenv from "dotenv";
-import routes from './routes/index.js'
 import {checkDeviceInfo} from './controllers/DeviceController.js'
-import {getOnchainLatestBlocknumber, fetch_latest_blocknumber, set_api_keys } from './controllers/TransactionController.js'
 import util from 'util'
-import { getOpenSeaLogs } from './controllers/OpenSeaContracts.js'
-import { main as getNFTCollectionList, getLogsByNFTCollection} from './controllers/NFTCollectionController.js'
-import { exit } from 'process';
-import Log from './models/Log.js';
 
 const Timer = util.promisify(setTimeout);
 

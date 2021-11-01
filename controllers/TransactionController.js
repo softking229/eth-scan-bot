@@ -21,7 +21,6 @@ export const set_api_keys = () => {
         etherscan_apikeys.push(etherscan_apikeys_store[i]);
     }
     global.current_api_calls = (new Array(etherscan_apikeys.length)).fill(0);
-    // console.log("Current API calls", global.current_api_calls);
 }
 
 var get_token_info = async (input) => {
@@ -31,9 +30,6 @@ var get_token_info = async (input) => {
         const id = converter.hexToDec(buyCallData.substr(buyCallData.length - 64));
         const address = params[0]['value'][4];
         const {data: {assets: [info]}} = await axios.get(opensea_api + '/v1/assets', { 
-            // headers: {
-            //     'X-API-KEY': process.env.OPENSEA_API_KEY
-            // },
             params: {
                 asset_contract_address: address,
                 token_ids: id,
@@ -431,7 +427,7 @@ export const fetch_latest_blocknumber = async() => {
     let latest_onchain_timestamp;
     params.module = "block";
     params.action = "getblockreward";
-    params.blockno = converter.decToHex(latest_onchain_blocknumber);
+    params.blockno = converter.hexToDec(latest_onchain_blocknumber);
     while(true) {
         try{
             let result = await axios( API_URL, {params}).catch(err => {
@@ -441,7 +437,7 @@ export const fetch_latest_blocknumber = async() => {
                 await Timer(1000);
                 continue;
             }
-            latest_onchain_timestamp = result.data.timeStamp;
+            latest_onchain_timestamp = result.data.result.timeStamp;
             break;
         } catch(err) {
             console.log(err.message, "fetch_latest_timestamp");

@@ -6,16 +6,19 @@ import {getTotalDevices} from "./DeviceController.js"
 import {getDatabaseLatestBlockNumber, wait_api_call_limit, addLog} from "./TransactionController.js"
 import TransactionHistory from '../models/TransactionHistory.js'
 import { topic1_mint } from '../consts.js'
-import { addWalletInfoToWatchList } from './TransactionController.js'
+import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp } from './TransactionController.js'
 import OpenSeaLog from '../models/OpenSeaLog.js'
 import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 
 const Timer = util.promisify(setTimeout);
 
 async function scrap_etherscan(page) {
+    console.log("begin scrapping nft_collection page:", page);
+    let latestTimeStamp = await getDatabaseLatestTimeStamp();
     let html;
     while(true) {
         try {
+            console.log("scrapping page");
             html = await axios.get("https://etherscan.io/tokens-nft", {
                 params: {
                     p: page,
@@ -27,46 +30,78 @@ async function scrap_etherscan(page) {
             break;
         } catch (error) {
             console.log(error.message, "in scrapping token-nft page", page);
-            await Timer(1000);
+            await Timer(5000);
             continue;
         }
     }
-    //const urls = html.data.match(/(?<=token\/)0x[a-zA-Z0-9]+/g);
     const tr_list = html.data.match(/<tr[\s\S]*?<\/tr>/g);
     if( !tr_list
     || tr_list.length <= 1) {
         global.nft_collection_stop_sign = true;
+        console.log("stopped scrapping nft_collection at page:", page);
         return 0;
     }
     tr_list.shift();
+    let nft_infos = [];
     for( const tr of tr_list) {
         const td_list = tr.match(/<td[\s\S]*?<\/td>/g);
-        console.log(td_list);
+        if( !td_list
+            || td_list.length != 4) {
+            continue;
+        }
+        const url_list = td_list[1].match(/(?<=token\/)0x[a-zA-Z0-9]+/g);
+        if( !url_list
+            || !url_list.length)
+            continue;
+        const url = url_list[0];
+        const transfer_3day = parseInt(td_list[3].substr(4, td_list[3].length - 9));
+        nft_infos.push({
+            url: url,
+            latestTimeStamp: latestTimeStamp,
+            page: page,
+            transfer_3day: transfer_3day
+        });
+        console.log(td_list[0], td_list[3], transfer_3day);
     }
-    process.exit(0);
-    if( urls && urls.length) {
-        let unit = 3;
-        for( let index = 0; index < urls.length; index += unit) {
-            let sub_urls = urls.slice( index, index + unit);
-            let promise_array = [];
-            for( let i = 0; i < sub_urls.length; i ++) {
-                promise_array.push(check_nft_collection_data(sub_urls[i], page));
-            }
+    if( !nft_infos.length) {
+        global.nft_collection_stop_sign = true;
+        console.log("stopped scrapping nft_collection at page:", page);
+        return 0;
+    }
+    const unit = 3;
+    for( let index = 0; index < nft_infos.length; index += unit) {
+        let sub_nft_infos = nft_infos.slice( index, index + unit);
+        let promise_array = [];
+        for( let i = 0; i < sub_nft_infos.length; i ++) {
+            if( !sub_nft_infos[i].transfer_3day) {
+                global.nft_collection_stop_sign = true;
+                break;
+            } else
+                promise_array.push(check_nft_collection_data(sub_nft_infos[i], page));
+        }
+        if( promise_array.length)
             await Promise.all(promise_array);
-        }
-        for( const url of urls) {
+        if( global.nft_collection_stop_sign) {
+            console.log("stopped scrapping nft_collection at page:", page);
+            return 0;
         }
     }
-    console.log("page: ", page);
-    return urls?urls.length:0;
+    console.log("end scrapping nft_collection page:", page);
 }
 
-export const check_nft_collection_data = async(url, page = 0) => {
-    global.nft_collection_stop_sign = false;
+export const check_nft_collection_data = async(nft_info) => {
+    const url = nft_info.url;
+    const page = nft_info.page;
+    const latestTimeStamp = nft_info.latestTimeStamp;
     const API_URL = process.env.API_URL;
-    try{
-        let nftCollection = new NFTCollection({contractHash: url, lastCheckedBlock: -1, firstBlock: 0});
-        await nftCollection.save();
+    let nftCollection;
+    nftCollection = await NFTCollection.findOne({contractHash: url});
+    if( !nftCollection) {
+        nftCollection = new NFTCollection({contractHash: url,
+        lastCheckedBlock: -1, 
+        firstBlock: 0, 
+        latestTimeStamp: latestTimeStamp});
+
         let logs;
         let params = {
             module: "logs",
@@ -75,9 +110,10 @@ export const check_nft_collection_data = async(url, page = 0) => {
             fromBlock: 0,
             toBlock: "latest"
         };
-        params.apikey = await wait_api_call_limit();
         while(true) {
             try{
+                console.log("getting first log of nft collection", params.address);
+                params.apikey = await wait_api_call_limit();
                 let result = await axios.get(API_URL, {params}).catch(err => {
                     throw err;
                 });
@@ -94,29 +130,41 @@ export const check_nft_collection_data = async(url, page = 0) => {
         }
         if( !logs.length) {
             nftCollection.firstBlock = await getDatabaseLatestBlockNumber();
-            // console.log("getDatabaseLatestBlockNumber", nftCollection.firstBlock);
         }
         else
             nftCollection.firstBlock = converter.hexToDec(logs[0].blockNumber);
+        nftCollection.latestTimeStamp = latestTimeStamp;
         try{
+            console.log("saving nft collection", params.address);
             await nftCollection.save();
+            return;
         } catch(err) {
-            console.log(err.message, "updating nftCollection in scrap_etherscan");
+            console.log("nft collection already exist", params.address);
+            nftCollection = await NFTCollection.findOne({contractHash: url});
         }
+    }
+    nftCollection.latestTimeStamp = latestTimeStamp;
+    try{
+        console.log("updating nft collection", nftCollection.contractHash);
+        await nftCollection.save();
     } catch(err) {
-        console.log(err.message, "creating nftCollection in scrap_etherscan");
+        console.log(err.message, "updating nftCollection in scrap_etherscan");
     }
 }
 
 export const main = async() => {
     while(true) {
+        global.nft_collection_stop_sign = false;
         const total_device_count = await getTotalDevices();
         let page = global.deviceNumber;
         const mod = page % total_device_count;
         while(true){
             let token_count = await scrap_etherscan(page);
+            if( global.nft_collection_stop_sign)
+                break;
             page += total_device_count;
             if(token_count == 0) break;
+            await Timer(10000);
         }
         await Timer(10000);
     }

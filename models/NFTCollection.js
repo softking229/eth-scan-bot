@@ -8,7 +8,8 @@ var NFTCollectionModelSchema = new Schema({
     contractHash: { type: String, unique: true },
     name: String,
     firstBlock: Number,
-    lastCheckedBlock: Number
+    lastCheckedBlock: Number,
+    latestTimeStamp: Number
 });
 
 NFTCollectionModelSchema.plugin(autoIncrement.plugin, 'NFTCollection');
