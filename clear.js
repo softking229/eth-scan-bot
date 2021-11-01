@@ -35,6 +35,10 @@ try {
     console.log("OpenSeaDestributedInfo removed");
 }catch(err){}
 try {
+    await mongoose.connection.db.dropCollection("openseacontractlogs");
+    console.log("OpenSeaContractLogs removed");
+}catch(err){}
+try {
     await mongoose.connection.db.dropCollection("openseadeviceinfos");
     console.log("OpenSeaDeviceInfo removed");
 }catch(err){}
