@@ -3,15 +3,18 @@ import mongoose from 'mongoose';
 var Schema = mongoose.Schema;
 
 var OpenSeaContractLogModelSchema = new Schema({
-    transactionHash: { type: String, unique: true },
+    address: String,
+    topics: Array,
+    topicsLength: Number,
+    data: { type: String, default: "0x"},
     blockNumber: Number,
-    from: String,
-    to: String,
-    tokenNumber: Number,
-    tokenName: String,
-    value: Number,
-    timestamp: Number,
-    type: String
+    timeStamp: Number,
+    gasPrice: Number,
+    gasUsed: Number,
+    logIndex: Number,
+    transactionHash: String,
+    transactionIndex: Number,
+    tokenID: {type: Number, default: -1}
 });
 
 // Compile model from schema

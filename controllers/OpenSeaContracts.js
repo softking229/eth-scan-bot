@@ -11,7 +11,6 @@ import util from 'util'
 import { JSDOM } from "jsdom"
 import { allowedNodeEnvironmentFlags } from 'process'
 import OpenSeaContractLog from '../models/OpenSeaContractLog.js'
-import OpenSeaLog from '../models/OpenSeaLog.js'
 const { window } = new JSDOM()
 const Timer = util.promisify(setTimeout);
 

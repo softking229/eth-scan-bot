@@ -9,6 +9,7 @@ import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint, duration_for_ch
 import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp } from './TransactionController.js'
 import OpenSeaLog from '../models/OpenSeaLog.js'
 import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
+import OpenSeaContractLog from '../models/OpenSeaContractLog.js'
 
 const Timer = util.promisify(setTimeout);
 
@@ -291,7 +292,7 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
     } catch(err) {
         console.log(logs.length, "logs added for",logs[0].address);
     }
-    const opensea_logs = await OpenSeaLog.find({"blockNumber":{"$gte": firstBlock, "$lte": lastBlock}});
+    const opensea_logs = await OpenSeaContractLog.find({"blockNumber":{"$gte": firstBlock, "$lte": lastBlock}});
     for( const opensea_log of opensea_logs)
         if( transaction_infos[opensea_log.transactionHash])
             transaction_infos[opensea_log.transactionHash].push(opensea_log);
