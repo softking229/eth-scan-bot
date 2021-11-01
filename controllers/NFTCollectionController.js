@@ -7,7 +7,6 @@ import {getDatabaseLatestBlockNumber, wait_api_call_limit, addLog} from "./Trans
 import TransactionHistory from '../models/TransactionHistory.js'
 import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint, duration_for_checking_nft_collection } from '../consts.js'
 import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp } from './TransactionController.js'
-import OpenSeaLog from '../models/OpenSeaLog.js'
 import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 import OpenSeaContractLog from '../models/OpenSeaContractLog.js'
 
