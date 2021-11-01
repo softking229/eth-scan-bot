@@ -467,7 +467,7 @@ export const getDatabaseLatestTimeStamp = async() => {
     while( true) {
         const {timeStamp:timeStamp} = await OnChainInfo.findOne();
         if( timeStamp == null) {
-            await Timer();
+            await Timer(500);
             continue;
         }
         return timeStamp;
