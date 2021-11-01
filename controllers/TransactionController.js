@@ -81,7 +81,7 @@ export const wait_api_call_limit = async() => {
 
 axios.interceptors.request.use( request => {
     if(request.url == process.env.API_URL ){
-        console.log(current_api_calls);
+        //console.log(current_api_calls);
     }
     return request;
 })
