@@ -233,37 +233,6 @@ export const fetch_transaction_by_hash = async(hash, oldTransaction, log, alt_to
     global.fetch_transaction_pending.push(hash);
     while(true) {
         try{
-            //////////////////////////////////////////////////
-            // let response = await axios.get(blockcypher_transaction_api + hash).catch(err => {
-            //     throw err;
-            // });
-            // const index = global.fetch_transaction_pending.findIndex(element => element == hash);
-            // let result = response.data;
-            // result.total = 1.0 * result.total / (10 ** 18);
-            // result.fees = 1.0 * result.fees / (10 ** 18);
-            // result.gas_price = 1.0 * result.gas_price / (10 ** 18);
-            // result.gas_tip_cap = 1.0 * result.gas_tip_cap / (10 ** 18);
-            // result.gas_fee_cap = 1.0 * result.gas_fee_cap / (10 ** 18);
-            // result.from_opensea = false;
-            // if( 1.0 * result.total >= 10000){
-            //     result.alt_total = result.total;
-            //     result.total = 0;
-            // }
-
-            // if( oldTransaction) {
-            //     await oldTransaction.updateOne(result);
-            // }
-            // else {
-            //     await addTransaction( result);
-            // }
-            // if( oldTransaction) {
-            //     await oldTransaction.updateOne(result);
-            // }
-            // else {
-            //     await addTransaction( result);
-            // }
-            //////////////////////////////////////
-
             const API_KEY = await wait_api_call_limit();
             const API_URL = process.env.API_URL;
             let params = {
