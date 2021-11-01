@@ -153,6 +153,8 @@ export const check_nft_collection_data = async(nft_info) => {
 }
 
 export const main = async() => {
+    console.log("waiting for starting checking nft collection for", 5 * global.deviceNumber);
+    await Timer(5000 * global.deviceNumber);
     while(true) {
         global.nft_collection_stop_sign = false;
         const total_device_count = await getTotalDevices();
@@ -164,9 +166,9 @@ export const main = async() => {
                 break;
             page += total_device_count;
             if(token_count == 0) break;
-            await Timer(10000);
+            await Timer(30000);
         }
-        await Timer(10000);
+        await Timer(30000);
     }
 }
 

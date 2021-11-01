@@ -401,6 +401,7 @@ export const getOnchainLatestBlocknumber = async() => {
 }
 
 export const fetch_latest_blocknumber = async() => {
+    console.log("begin fetching last block info");
     const API_URL = process.env.API_URL;
     const params = {
         module: "proxy",
@@ -453,6 +454,7 @@ export const fetch_latest_blocknumber = async() => {
         result.timeStamp = latest_onchain_timestamp;
     }
     await result.save();
+    console.log("end fetching last block info");
     return latest_onchain_blocknumber;
 }
 export const getDatabaseLatestBlockNumber = async() => {
