@@ -42,4 +42,4 @@ export const etherscan_apikeys_store = [
 export const opensea_api = 'https://api.opensea.io/api'
 export const blockcypher_transaction_api = 'https://api.blockcypher.com/v1/eth/main/txs/';
 export const duration_for_checking_nft_collection = 30;
-export const opensea_origin_start_block = 13500979;//5779378;
+export const opensea_origin_start_block = 5779378;

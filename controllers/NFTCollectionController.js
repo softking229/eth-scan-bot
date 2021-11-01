@@ -5,7 +5,7 @@ import NFTCollection from '../models/NFTCollection.js'
 import {getTotalDevices} from "./DeviceController.js"
 import {getDatabaseLatestBlockNumber, wait_api_call_limit, addLog} from "./TransactionController.js"
 import TransactionHistory from '../models/TransactionHistory.js'
-import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint } from '../consts.js'
+import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint, duration_for_checking_nft_collection } from '../consts.js'
 import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp } from './TransactionController.js'
 import OpenSeaLog from '../models/OpenSeaLog.js'
 import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
