@@ -98,13 +98,15 @@ export const check_nft_collection_data = async(nft_info) => {
     const url = nft_info.url;
     const page = nft_info.page;
     const latestTimeStamp = nft_info.latestTimeStamp;
+    const name = nft_info.name;
     const API_URL = process.env.API_URL;
     let nftCollection;
     nftCollection = await NFTCollection.findOne({contractHash: url});
     if( !nftCollection) {
         nftCollection = new NFTCollection({contractHash: url,
         lastCheckedBlock: -1, 
-        firstBlock: 0, 
+        firstBlock: 0,
+        name: name,
         latestTimeStamp: latestTimeStamp});
 
         let logs;
