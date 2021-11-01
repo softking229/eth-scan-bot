@@ -5,7 +5,7 @@ import NFTCollection from '../models/NFTCollection.js'
 import {getTotalDevices} from "./DeviceController.js"
 import {getDatabaseLatestBlockNumber, wait_api_call_limit, addLog} from "./TransactionController.js"
 import TransactionHistory from '../models/TransactionHistory.js'
-import { topic1_mint } from '../consts.js'
+import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint } from '../consts.js'
 import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp } from './TransactionController.js'
 import OpenSeaLog from '../models/OpenSeaLog.js'
 import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
@@ -215,22 +215,33 @@ export const getLogsByCheckableNFTCollections = async() => {
             continue;
         }
         console.log(nft_collections.length, "nft collections found to check");
+        let params = {
+            module: "logs",
+            action: "getLogs",
+            toBlock: latestBlock,
+        }
         for( const nft_collection of nft_collections) {
-            await getLogsByNFTCollection(nft_collection);
+            await getLogsByNFTCollection(nft_collection, params);
         }
         await Timer(1000);
         console.log("nft one round finished");
     }
 }
-
-export const getLogsByNFTCollection = async(nft_collection) => {
-    let params = {
-        module: "logs",
-        action: "getLogs",
-        address: nft_collection.contractHash,
-        fromBlock: 1 * nft_collection.lastCheckedBlock + 1,
-        toBlock: latestBlock,
-    }
+export const newWallet = () => {
+    return {
+        address: "",
+        spent: 0,
+        revenue: 0,
+        nfts_bought: 0,
+        nfts_sold: 0,
+        mint: 0,
+        collections_bought: 0,
+        collections_sold: 0
+    };
+}
+export const getLogsByNFTCollection = async(nft_collection, params) => {
+    params.address = nft_collection.contractHash,
+    params.fromBlock = 1 * nft_collection.lastCheckedBlock + 1
     let logs = [];
     while(true) {
         try{
@@ -261,96 +272,17 @@ export const getLogsByNFTCollection = async(nft_collection) => {
         }
         logs.splice(i + 1, 1000);
     }
+    let transaction_infos = {};
     let fetch_required_transaction_hashes = [];
     let add_required_transactions = [];
     for( const log of logs) {
         const blockNumber = converter.hexToDec(log.blockNumber);
-        if( lastBlock < blockNumber)
-            lastBlock = blockNumber;
-        if( firstBlock > blockNumber)
-            firstBlock = blockNumber;
+        if( lastBlock < blockNumber) lastBlock = blockNumber;
+        if( firstBlock > blockNumber) firstBlock = blockNumber;
+
         log.topicsLength = log.topics.length;
-        //if traded with alt token
-        if( log.topicsLength == 1) { 
-            const from = "0x" + log.data.substr(2, 64);
-            const to = "0x" + log.data.substr(66, 64);
-            log.tokenID = converter.hexToDec("0x" + log.data.substr(130));
-            await Promise.all( addWalletInfoToWatchList({
-                address: from,
-                spent: 0,
-                revenue: 0,
-                nfts_bought: 0,
-                nfts_sold: 1,
-                mint: 0
-            }), addWalletInfoToWatchList({
-                address: to,
-                spent: 0,
-                revenue: 0,
-                nfts_bought: 1,
-                nfts_sold: 0,
-                mint: 1
-            }));
-            if( add_required_transactions.find( element => element.hash == log.transactionHash) === undefined)
-                add_required_transactions.push( {
-                    hash: log.transactionHash,
-                    timeStamp: log.timeStamp,
-                    block_height: log.blockNumber,
-                    gas_price: log.gasPrice,
-                    gas_used: log.gasUsed,
-                    fees: converter.hexToDec(log.gasPrice) * converter.hexToDec(log.gasUsed) / (10 ** 18)
-                });
-        } else if( log.topics[1] == topic1_mint  //if it is a mint log
-            && log.topicsLength == 4) {
-            addWalletInfoToWatchList({
-                address: "0x" + log.topics[2].substr(26),
-                spent: 0,
-                revenue: 0,
-                nfts_bought: 0,
-                nfts_sold: 0,
-                mint: 1
-            });
-            log.tokenID = converter.hexToDec(log.topics[3]);
-            if( add_required_transactions.find( element => element.hash == log.transactionHash) === undefined)
-                add_required_transactions.push( {
-                    hash: log.transactionHash,
-                    timeStamp: log.timeStamp,
-                    block_height: log.blockNumber,
-                    gas_price: log.gasPrice,
-                    gas_used: log.gasUsed,
-                    fees: converter.hexToDec(log.gasPrice) * converter.hexToDec(log.gasUsed) / (10 ** 18)
-                });
-        } else if( log.topics[1] != topic1_mint //if it is a trade with eth
-            && log.topics[2] != topic1_mint
-            && log.topicsLength == 4
-            && fetch_required_transaction_hashes.find( element => element.hash == log.transactionHash) === undefined) {
-                const from = "0x" + log.topics[1].substr(26);
-                const to = "0x" + log.topics[2].substr(26);
-                log.tokenID = converter.hexToDec(log.topics[3]);
-                await Promise.all(addWalletInfoToWatchList({
-                    address: from,
-                    spent: 0,
-                    revenue: 0,
-                    nfts_bought: 0,
-                    nfts_sold: 1,
-                    mint: 0
-                }), addWalletInfoToWatchList({
-                    address: to,
-                    spent: 0,
-                    revenue: 0,
-                    nfts_bought: 1,
-                    nfts_sold: 0,
-                    mint: 0
-                }));
-                fetch_required_transaction_hashes.push({
-                    hash: log.transactionHash,
-                    block_height: log.blockNumber,
-                    // timeStamp: log.timeStamp,
-                    // gas_price: log.gasPrice,
-                    // gas_used: log.gasUsed,
-                    // total: converter.hexToDec("0x" + log.data.substr(130)) / (10 ** 18),
-                    // fees: converter.hexToDec(log.gasPrice) * converter.hexToDec(log.gasUsed) / (10 ** 18)
-                });
-        }
+        if( !transaction_infos[log.transactionHash]) transaction_infos = [];
+        transaction_infos.push(log);
     }
     try {
         console.log("adding logs for",logs[0].address);
@@ -359,61 +291,104 @@ export const getLogsByNFTCollection = async(nft_collection) => {
     } catch(err) {
         console.log(logs.length, "logs added for",logs[0].address);
     }
-    try {
-        if( add_required_transactions.length) {
-            console.log("adding 0 price transactions for", logs[0].address);
-            await TransactionHistory.insertMany(add_required_transactions, {ordered: false});
-            console.log(add_required_transactions.length, "0 price transactions for", logs[0].address);
-        }
-    } catch(err) {
-        console.log(add_required_transactions.length, "0 price transactions for", logs[0].addres);
-    }
-    for(const transaction of add_required_transactions) {
-        let index;
-        if((index = fetch_required_transaction_hashes.find( element => element.hash == transaction.hash)) !== undefined){
-            fetch_required_transaction_hashes.splice(index, 1);
-        }
-    }
     const opensea_logs = await OpenSeaLog.find({"blockNumber":{"$gte": firstBlock, "$lte": lastBlock}});
-    for( let i = 0; i < fetch_required_transaction_hashes.length; i ++) {
-        console.log("foundddddddddd");
-        let index;
-        if( (index = opensea_logs.find(element=> element.hash == fetch_required_transaction_hashes[i].hash)) !== undefined) {
-            const log = opensea_logs[index];
-            const from = "0x" + log.topics[1].substr(26);
-            const to = "0x" + log.topics[2].substr(26);
-            fetch_required_transaction_hashes[i] = {
-                hash: log.transactionHash,
-                timeStamp: log.timeStamp,
-                block_height: log.blockNumber,
-                gas_price: log.gasPrice,
-                gas_used: log.gasUsed,
-                total: converter.hexToDec("0x" + log.data.substr(130)) / (10 ** 18),
-                fees: converter.hexToDec(log.gasPrice) * converter.hexToDec(log.gasUsed) / (10 ** 18)
-            };
-            await Promise.all(addWalletInfoToWatchList({
-                address: from,
-                spent: 0,
-                revenue: fetch_required_transaction_hashes[i].total,
-                nfts_bought: 0,
-                nfts_sold: 0,
-                mint: 0
-            }), addWalletInfoToWatchList({
-                address: to,
-                spent: fetch_required_transaction_hashes[i].total,
-                revenue: 0,
-                nfts_bought: 0,
-                nfts_sold: 0,
-                mint: 0
-            }));
+    for( const opensea_log of opensea_logs)
+        if( transaction_infos[opensea_log.transactionHash])
+            transaction_infos[opensea_log.transactionHash].push(opensea_log);
+    let wallet_infos = {};
+    let transactions = [];
+    for( let hash in transaction_infos) {
+        let logs = transaction_infos[hash];
+        let is_mint = false;
+        let is_ownership_transfer = false;
+        let isAuctionSuccessful = false;
+        let price = 0;
+        let is_price_set = false;
+        let from;
+        let to;
+        for( const log of logs) {
+            //ownership transfer
+            if( log.topics[0] == topic0_OwnershipTransferred) {
+                is_ownership_transfer = true;
+                from = "0x" + log.topics[1].substr(26);
+                to = "0x" + log.topics[2].substr(26);
+                if( log.topics[1] != topic1_mint
+                    && log.topicsLength == 3) {
+                    wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet();
+                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
+                    wallet_infos[from].collections_sold ++;
+                    wallet_infos[to].collections_bought ++;
+                    break;
+                }
+            }
+            //AuctionSuccessful
+            if( log.topics[0] == topic0_AuctionSuccessful) {
+                isAuctionSuccessful = true;
+                is_price_set = true;
+                price = converter.hexToDec(log.data.substr(66, 64)) / (10 ** 18);
+                continue;
+            }
+            //opensea ordersmatch
+            if( log.topics[0] == topic_orders_matched
+            && log.address == opensea_address) {
+                if( !is_price_set) {
+                    price = converter.hexToDec(log.data.substr(130)) / (10 ** 18);
+                    is_price_set = true;
+                }
+            }
+            //else
+            if( log.topics[0] != topic0_transfer) continue;
+            //nft transfer
+            if( log.topicsLength == 4) {
+                //if this transaction is AuctionSuccessful
+                if( isAuctionSuccessful) {
+                    from = "0x" + log.topics[1].substr(26);
+                    to = "0x" + log.topics[2].substr(26);
+                    wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet();
+                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
+                    wallet_infos[from].nfts_sold ++;
+                    wallet_infos[to].nfts_bought ++;
+                    continue;
+                }
+                //if mint
+                if( log.topics[1] == topic1_mint) {
+                    to = "0x" + log.topics[2].substr(26);
+                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
+                    wallet_infos[to].mint ++;
+                    is_mint = true;
+                    continue;
+                }
+                continue;
+            }
+            //nft transfer
+            if( log.topicsLength == 1) {
+                //if this transaction is AuctionSuccessful
+                from = "0x" + log.topics[1].substr(26);
+                to = "0x" + log.topics[1].substr(90);
+                wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet();
+                wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
+                wallet_infos[from].nfts_sold ++;
+                wallet_infos[to].nfts_bought ++;
+            }
+            if( !is_mint) {
+                wallet_infos[from].revenue += price;
+                wallet_infos[to].spent += price;
+            }
         }
+        transactions.push({
+            hash: logs[0].transactionHash,
+            timeStamp: log[0].timeStamp,
+            block_height: log[0].blockNumber,
+            gas_price: log[0].gasPrice,
+            gas_used: log[0].gasUsed,
+            total: price,
+            fees: converter.hexToDec(log[0].gasPrice)
+                * converter.hexToDec(log[0].gasUsed) / (10 ** 18)
+        });
     }
-    try {
-        if( fetch_required_transaction_hashes.length){
-            console.log("adding fetch required transactions for ", )
-            await TransactionHistory.insertMany(fetch_required_transaction_hashes, {ordered: false});
-        }
-    } catch(err) {}
+    for( const wallet_info of wallet_infos) {
+        await addWalletInfoToWatchList( wallet_info);
+    }
     try{
         await NFTCollection.updateOne({contractHash: nft_collection.contractHash}, {lastCheckedBlock: lastBlock});
         console.log("lastBlock:", lastBlock, nft_collection.contractHash);

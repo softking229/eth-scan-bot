@@ -389,6 +389,8 @@ export const addWalletInfoToWatchList = async(params) => {
         wallet.nfts_bought += params.nfts_bought;
         wallet.nfts_sold += params.nfts_sold;
         wallet.mint += params.mint;
+        wallet.collections_bought += params.collections_bought;
+        wallet.collections_sold += params.collections_sold;
         wallet.save();
     }
 }
