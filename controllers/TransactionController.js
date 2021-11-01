@@ -464,6 +464,12 @@ export const getDatabaseLatestBlockNumber = async() => {
     return latestBlock;
 }
 export const getDatabaseLatestTimeStamp = async() => {
-    const {timeStamp:timeStamp} = await OnChainInfo.findOne();
-    return timeStamp;
+    while( true) {
+        const {timeStamp:timeStamp} = await OnChainInfo.findOne();
+        if( timeStamp == null) {
+            await Timer();
+            continue;
+        }
+        return timeStamp;
+    }
 }
