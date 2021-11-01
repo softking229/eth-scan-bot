@@ -32,9 +32,9 @@ set_api_keys();
 
 await fetch_latest_blocknumber();
 
-getNFTCollectionList();
+// getNFTCollectionList();
 // getLogsByCheckableNFTCollections();
-// getOpenSeaLogs();
+getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
     // Setup Express
@@ -48,5 +48,5 @@ if( global.deviceNumber == 1) {
     // app.listen(PORT, () => {
     //     console.log(`app listening at http://localhost:${PORT}`)
     // });
-    getOnchainLatestBlocknumber();
+    // getOnchainLatestBlocknumber();
 }
