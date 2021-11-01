@@ -54,12 +54,18 @@ async function scrap_etherscan(page) {
             || !url_list.length)
             continue;
         const url = url_list[0];
+        const name_list = td_list[1].match(/data-toggle='tooltip' title=[\s\S]*?<\/a>/g);
+        let name = "";
+        if( name_list && name_list.length) {
+            name = name_list[0].substr(71, name_list[0].length - 75);
+        }
         const transfer_3day = parseInt(td_list[3].substr(4, td_list[3].length - 9));
         nft_infos.push({
             url: url,
             latestTimeStamp: latestTimeStamp,
             page: page,
-            transfer_3day: transfer_3day
+            transfer_3day: transfer_3day,
+            name: name
         });
     }
     if( !nft_infos.length) {
