@@ -87,7 +87,27 @@ router.get('/api/profit-leaders', async ( req, resp) => {
     // console.log(await query.sort(sortQuery).skip(skip).limit(offset).exec());
     // console.log(await query.exec());
     console.log(sortField);
-    resp.json(await WatchList.aggregate([addFields, { "$sort": sortQuery}, {"$skip": skip}, {"$limit":offset}]));
+    let response = {
+        total_page: 1,
+        page: 1,
+        limit: 10,
+        result: [
+            {
+                "address": "0x51787a2c56d710c68140bdadefd3a98bff96feb4",
+                "spent": 83.682,
+                "revenue": 1354.3256373742283,
+                "nfts_bought": 42,
+                "nfts_sold": 67,
+                "mint": 0,
+                "total_profit": 1270.6436373742283,
+                "profit": 1518.4192985041327,
+                "collections_bought": 2,
+                "collections_sold": 1,
+            }
+        ]
+    }
+    response.result = await WatchList.aggregate([addFields, { "$sort": sortQuery}, {"$skip": skip}, {"$limit":offset}])
+    resp.json(response);
 });
 
 export default router;

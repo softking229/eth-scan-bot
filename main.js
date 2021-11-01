@@ -8,7 +8,7 @@ import {checkDeviceInfo} from './controllers/DeviceController.js'
 import {getOnchainLatestBlocknumber, fetch_latest_blocknumber, set_api_keys } from './controllers/TransactionController.js'
 import util from 'util'
 import { getOpenSeaLogs } from './controllers/OpenSeaContracts.js'
-import { main as getNFTCollectionList, getLogsByNFTCollection} from './controllers/NFTCollectionController.js'
+import { main as getNFTCollectionList, getLogsByCheckableNFTCollections} from './controllers/NFTCollectionController.js'
 import { exit } from 'process';
 import Log from './models/Log.js';
 
@@ -32,9 +32,8 @@ set_api_keys();
 
 await fetch_latest_blocknumber();
 
-getNFTCollectionList();
-//getLogsByNFTCollection();
-//getLogsByNFTCollection();
+//getNFTCollectionList();
+//getLogsByCheckableNFTCollections();
 //getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
@@ -46,8 +45,8 @@ if( global.deviceNumber == 1) {
     app.use(morgan('combined'));
     app.use('/', routes);
 
-    // app.listen(PORT, () => {
-    //     console.log(`app listening at http://localhost:${PORT}`)
-    // });
+    app.listen(PORT, () => {
+        console.log(`app listening at http://localhost:${PORT}`)
+    });
     getOnchainLatestBlocknumber();
 }
