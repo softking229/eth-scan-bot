@@ -52,8 +52,8 @@ router.get('/api/profit-leaders', async ( req, resp) => {
     };
     let sortField = req.query.sortField;
     let sortBy = req.query.sortBy;
-    let page = req.query.page?req.query.page:1;
-    let offset = req.query.limit?req.query.limit:10;
+    let page = req.query.page?(1 * req.query.page):1;
+    let offset = req.query.limit?(1 * req.query.limit):10;
     let sortQuery;
     sortBy = (sortBy=="asc"?1:-1);
     let skip = (page - 1) * offset;
