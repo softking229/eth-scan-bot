@@ -52,12 +52,15 @@ router.get('/api/profit-leaders', async ( req, resp) => {
     };
     let sortField = req.query.sortField;
     let sortBy = req.query.sortBy;
-    let page = req.query.page;
-    let offset = 10;
+    let page = req.query.page?req.query.page:1;
+    let offset = req.query.limit?req.query.limit:10;
     let sortQuery;
-    page = (page===undefined?1:page*1);
     sortBy = (sortBy=="asc"?1:-1);
     let skip = (page - 1) * offset;
+    let total_count = await WatchList.find().count();
+    let total_page;
+    total_page = Math.ceil(total_count / offset);
+    if( total_page <= 0) total_page = 1;
     switch(sortField) {
     case "profit":
         sortQuery = { profit: sortBy};
@@ -88,9 +91,9 @@ router.get('/api/profit-leaders', async ( req, resp) => {
     // console.log(await query.exec());
     console.log(sortField);
     let response = {
-        total_page: 1,
-        page: 1,
-        limit: 10,
+        total_page: total_page,
+        page: page,
+        limit: offset,
         result: [
             {
                 "address": "0x51787a2c56d710c68140bdadefd3a98bff96feb4",

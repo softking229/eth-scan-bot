@@ -34,7 +34,7 @@ await fetch_latest_blocknumber();
 
 getNFTCollectionList();
 getLogsByCheckableNFTCollections();
-// getOpenSeaLogs();
+getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {
     // Setup Express
@@ -45,8 +45,8 @@ if( global.deviceNumber == 1) {
     app.use(morgan('combined'));
     app.use('/', routes);
 
-    // app.listen(PORT, () => {
-    //     console.log(`app listening at http://localhost:${PORT}`)
-    // });
-    // getOnchainLatestBlocknumber();
+    app.listen(PORT, () => {
+        console.log(`app listening at http://localhost:${PORT}`)
+    });
+    getOnchainLatestBlocknumber();
 }
