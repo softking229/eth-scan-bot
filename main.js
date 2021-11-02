@@ -32,8 +32,8 @@ set_api_keys();
 
 await fetch_latest_blocknumber();
 
-getNFTCollectionList();
-// getLogsByCheckableNFTCollections();
+// getNFTCollectionList();
+getLogsByCheckableNFTCollections();
 // getOpenSeaLogs();
 
 if( global.deviceNumber == 1) {

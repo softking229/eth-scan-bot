@@ -7,7 +7,7 @@ import {getDatabaseLatestBlockNumber, wait_api_call_limit, addLog} from "./Trans
 import TransactionHistory from '../models/TransactionHistory.js'
 import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint, duration_for_checking_nft_collection,
     topic0_OwnershipTransferred, topic_orders_matched } from '../consts.js'
-import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp } from './TransactionController.js'
+import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp, fetch_transaction_value } from './TransactionController.js'
 import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 import OpenSeaContractLog from '../models/OpenSeaContractLog.js'
 import Log from '../models/Log.js'
@@ -237,9 +237,9 @@ export const getLogsByCheckableNFTCollections = async() => {
         console.log("nft one round finished");
     }
 }
-export const newWallet = () => {
+export const newWallet = (address) => {
     return {
-        address: "",
+        address: address,
         spent: 0,
         revenue: 0,
         nfts_bought: 0,
@@ -250,17 +250,19 @@ export const newWallet = () => {
     };
 }
 export const getLogsByNFTCollection = async(nft_collection, params) => {
+    console.log("checking nft_collection", nft_collection.contractHash);
     const API_URL = process.env.API_URL;
     params.address = nft_collection.contractHash,
     params.fromBlock = 1 * nft_collection.lastCheckedBlock + 1
     let logs = [];
     while(true) {
         try{
+            console.log("fetching logs for nft_collection", nft_collection.contractHash);
             params.apikey = await wait_api_call_limit();
             let result = await axios.get(API_URL, {params}).catch(err => {
                 throw err;
             });
-            if(result.data.status != "1")
+            if(result.data.status != "1" && result.data.message != "No records found")
                 continue;
             logs = result.data.result; 
             break;
@@ -272,6 +274,7 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
     if( !logs.length) {
         return;
     }
+    console.log(logs.length, "logs fetched for nft_collection", nft_collection.contractHash);
     let lastBlock = 0;
     let firstBlock = 9999999;
     const last_log_transaction_hash = logs[logs.length - 1].transactionHash;
@@ -291,13 +294,15 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
         if( firstBlock > blockNumber) firstBlock = blockNumber;
 
         log.topicsLength = log.topics.length;
-        if( !transaction_infos[log.transactionHash]) {
-            transaction_infos[log.transactionHash] = [];
-            findQuery.push(log.transactionHash);
-        }
+        if( !transaction_infos[log.transactionHash]) transaction_infos[log.transactionHash] = []
         transaction_infos[log.transactionHash].push(log);
+        if( log.topics[0] != topic0_transfer) continue;
+        if( log.topicsLength == 4) {
+            log.tokenID = converter.hexToDec(log.topics[3]);
+        } else if( log.topicsLength == 1) {
+            log.tokenID = converter.hexToDec("0x" + log.data.substr(130));
+        }
     }
-    console.log(findQuery);
     try {
         console.log("adding logs for",logs[0].address);
         await Log.insertMany(logs, {ordered: false});
@@ -305,19 +310,6 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
     } catch(err) {
         console.log(logs.length, "logs added for",logs[0].address);
     }
-    // let opensea_logs = [];
-    // if( findQuery.length) {
-    //     try{
-    //         // opensea_logs = await OpenSeaContractLog.find({"blockNumber":{"$gte": firstBlock, "$lte": lastBlock}});
-    //         opensea_logs = await OpenSeaContractLog.find({ transactionHash: {"$in":findQuery}});
-    //     } catch(err) {
-    //         console.log(err.message);
-    //     }
-    // }
-    // console.log(opensea_logs.length,"opensea logs found to compare for", nft_collection.contractHash);
-    // for( const opensea_log of opensea_logs)
-    //     if( transaction_infos[opensea_log.transactionHash])
-    //         transaction_infos[opensea_log.transactionHash].push(opensea_log);
     let wallet_infos = {};
     let transactions = [];
     for( let hash in transaction_infos) {
@@ -329,6 +321,7 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
         let is_price_set = false;
         let from;
         let to;
+        let has_transfer = false;
         for( const log of logs) {
             //ownership transfer
             if( log.topics[0] == topic0_OwnershipTransferred) {
@@ -337,8 +330,8 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
                 to = "0x" + log.topics[2].substr(26);
                 if( log.topics[1] != topic1_mint
                     && log.topicsLength == 3) {
-                    wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet();
-                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
+                    wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet(from);
+                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet(to);
                     wallet_infos[from].collections_sold ++;
                     wallet_infos[to].collections_bought ++;
                     break;
@@ -362,36 +355,45 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
             //else
             if( log.topics[0] != topic0_transfer) continue;
             //nft transfer
+            has_transfer = true;
             if( log.topicsLength == 4) {
-                //if this transaction is AuctionSuccessful
-                if( isAuctionSuccessful) {
-                    from = "0x" + log.topics[1].substr(26);
-                    to = "0x" + log.topics[2].substr(26);
-                    wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet();
-                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
-                    wallet_infos[from].nfts_sold ++;
-                    wallet_infos[to].nfts_bought ++;
-                    continue;
-                }
                 //if mint
                 if( log.topics[1] == topic1_mint) {
                     to = "0x" + log.topics[2].substr(26);
-                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
+                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet(to);
                     wallet_infos[to].mint ++;
                     is_mint = true;
                     continue;
                 }
+                //if this transaction is AuctionSuccessful
+                if( is_mint)
+                    continue;
+                from = "0x" + log.topics[1].substr(26);
+                to = "0x" + log.topics[2].substr(26);
+                wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet(from);
+                wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet(to);
+                wallet_infos[from].nfts_sold ++;
+                wallet_infos[to].nfts_bought ++;
                 continue;
             }
             //nft transfer
             if( log.topicsLength == 1) {
+                // is_price_set = true;
+                from = "0x" + log.data.substr(26, 40);
+                to = "0x" + log.data.substr(90, 40);
+                if( from != "0x0000000000000000000000000000000000000000") {
+                    wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet(from);
+                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet(to);
+                    wallet_infos[from].nfts_sold ++;
+                    wallet_infos[to].nfts_bought ++;
+                } else {
+                    is_mint = true;
+                    wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet(to);
+                    wallet_infos[to].mint ++;
+                }
+            }
+            if( log.topicsLenth == 3) {
                 is_price_set = true;
-                from = "0x" + log.topics[1].substr(26);
-                to = "0x" + log.topics[1].substr(90);
-                wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet();
-                wallet_infos[to] = wallet_infos[to]?wallet_infos[to]:newWallet();
-                wallet_infos[from].nfts_sold ++;
-                wallet_infos[to].nfts_bought ++;
             }
             if( !is_mint) {
                 wallet_infos[from].revenue += price;
@@ -401,20 +403,27 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
         if( !is_mint 
             && !is_ownership_transfer
             && !is_price_set
-            && !isAuctionSuccessful) {
-            console.log("finding opensea_log", hash);
-            let opensea_log;
+            && !isAuctionSuccessful
+            && has_transfer) {
+            // console.log("finding opensea_log", hash);
+            // let opensea_log;
+            // try {
+            //     opensea_log = await OpenSeaContractLog.findOne({transactionHash: hash, logIndex: 1 * converter.hexToDec(logs[logs.length - 1].logIndex) + 1});
+            // } catch(err) {
+            //     console.log(err.message);
+            // }
+            // if(opensea_log) {
+            //     console.log("found opensea_log", hash);
+            //     price = converter.hexToDec(opensea_log.data.substr(130)) / (10 ** 18);
+            // } else console.log("not found opensea_log", hash, 1 * converter.hexToDec(logs[logs.length - 1].logIndex) + 1);
+            if( from)
+                price = await fetch_transaction_value(hash, converter.hexToDec(logs[0].blockNumber), from);
+            else if( to)
+                price = await fetch_transaction_value(hash, converter.hexToDec(logs[0].blockNumber), to);
             try {
-                opensea_log = await OpenSeaContractLog.findOne({transactionHash: hash});
-            } catch(err) {
-                console.log(err.message);
-            }
-            if(opensea_log) {
-                console.log("found opensea_log", hash);
-                price = converter.hexToDec(opensea_log.data.substr(130)) / (10 ** 18);
-            } else console.log("not found opensea_log", hash);
-            wallet_infos[from].revenue += price;
-            wallet_infos[to].spent += price;
+                wallet_infos[from].revenue += price;
+                wallet_infos[to].spent += price;
+            } catch(err) {}
         }
         transactions.push({
             hash: logs[0].transactionHash,
@@ -427,8 +436,8 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
                 * converter.hexToDec(logs[0].gasUsed) / (10 ** 18)
         });
     }
-    for( const wallet_info of wallet_infos) {
-        await addWalletInfoToWatchList( wallet_info);
+    for( let address in wallet_infos) {
+        await addWalletInfoToWatchList( wallet_infos[address]);
     }
     try{
         TransactionHistory.insertMany(transactions, {ordered: false});

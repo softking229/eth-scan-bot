@@ -442,3 +442,39 @@ export const getDatabaseLatestTimeStamp = async() => {
         return timeStamp;
     }
 }
+
+export const fetch_transaction_value = async(hash, blockNumber, account) => {
+    const API_URL = process.env.API_URL;
+    let params = {
+        module: 'account',
+        action: 'txlist',
+        address: account,
+        startblock: blockNumber,
+        endblock: blockNumber,
+    }
+    let tx_list;
+    while(true) {
+        try{
+            console.log("fetching transaction of ", hash, blockNumber, account);
+            params.apikey = await wait_api_call_limit();
+            let result = await axios.get(API_URL, {params}).catch(err => {
+                throw err;
+            });
+            if( result.data.status != "1"
+            && result.data.message != "No records found"){
+                console.log( result.data, hash, blockNumber, account, "calling api in fetch_transaction_value");
+                continue;
+            }
+            tx_list = result.data.result;
+            break;
+        } catch(err) {
+            console.log(err.message, "fetching_transaction_value");
+        }
+    }
+    const transaction = tx_list.find(element => element.hash == hash);
+    let value;
+    if( !transaction) value = 0;
+    else value =  1 * transaction.value / (10 ** 18);
+    console.log("value is ", value);
+    return value;
+}
