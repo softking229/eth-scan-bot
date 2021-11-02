@@ -17,5 +17,7 @@ var OpenSeaContractLogModelSchema = new Schema({
     tokenID: {type: Number, default: -1}
 });
 
+OpenSeaContractLogModelSchema.index({ logIndex: 1, transactionHash: 1}, { unique: true });
+
 // Compile model from schema
 export default mongoose.model('OpenSeaContractLog', OpenSeaContractLogModelSchema );

@@ -5,10 +5,12 @@ import NFTCollection from '../models/NFTCollection.js'
 import {getTotalDevices} from "./DeviceController.js"
 import {getDatabaseLatestBlockNumber, wait_api_call_limit, addLog} from "./TransactionController.js"
 import TransactionHistory from '../models/TransactionHistory.js'
-import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint, duration_for_checking_nft_collection } from '../consts.js'
+import { topic0_AuctionSuccessful, topic0_transfer, topic1_mint, duration_for_checking_nft_collection,
+    topic0_OwnershipTransferred, topic_orders_matched } from '../consts.js'
 import { addWalletInfoToWatchList, getDatabaseLatestTimeStamp } from './TransactionController.js'
 import {getOpenseaLastBlockNumber} from './OpenSeaContracts.js'
 import OpenSeaContractLog from '../models/OpenSeaContractLog.js'
+import Log from '../models/Log.js'
 
 const Timer = util.promisify(setTimeout);
 
@@ -248,6 +250,7 @@ export const newWallet = () => {
     };
 }
 export const getLogsByNFTCollection = async(nft_collection, params) => {
+    const API_URL = process.env.API_URL;
     params.address = nft_collection.contractHash,
     params.fromBlock = 1 * nft_collection.lastCheckedBlock + 1
     let logs = [];
@@ -281,28 +284,40 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
         logs.splice(i + 1, 1000);
     }
     let transaction_infos = {};
-    let fetch_required_transaction_hashes = [];
-    let add_required_transactions = [];
+    let findQuery = [];
     for( const log of logs) {
         const blockNumber = converter.hexToDec(log.blockNumber);
         if( lastBlock < blockNumber) lastBlock = blockNumber;
         if( firstBlock > blockNumber) firstBlock = blockNumber;
 
         log.topicsLength = log.topics.length;
-        if( !transaction_infos[log.transactionHash]) transaction_infos = [];
-        transaction_infos.push(log);
+        if( !transaction_infos[log.transactionHash]) {
+            transaction_infos[log.transactionHash] = [];
+            findQuery.push(log.transactionHash);
+        }
+        transaction_infos[log.transactionHash].push(log);
     }
+    console.log(findQuery);
     try {
         console.log("adding logs for",logs[0].address);
         await Log.insertMany(logs, {ordered: false});
-        console.log(logs.length, "logs added for",logs[0].address);
+        console.log(logs.length, "logs totally added for",logs[0].address);
     } catch(err) {
         console.log(logs.length, "logs added for",logs[0].address);
     }
-    const opensea_logs = await OpenSeaContractLog.find({"blockNumber":{"$gte": firstBlock, "$lte": lastBlock}});
-    for( const opensea_log of opensea_logs)
-        if( transaction_infos[opensea_log.transactionHash])
-            transaction_infos[opensea_log.transactionHash].push(opensea_log);
+    // let opensea_logs = [];
+    // if( findQuery.length) {
+    //     try{
+    //         // opensea_logs = await OpenSeaContractLog.find({"blockNumber":{"$gte": firstBlock, "$lte": lastBlock}});
+    //         opensea_logs = await OpenSeaContractLog.find({ transactionHash: {"$in":findQuery}});
+    //     } catch(err) {
+    //         console.log(err.message);
+    //     }
+    // }
+    // console.log(opensea_logs.length,"opensea logs found to compare for", nft_collection.contractHash);
+    // for( const opensea_log of opensea_logs)
+    //     if( transaction_infos[opensea_log.transactionHash])
+    //         transaction_infos[opensea_log.transactionHash].push(opensea_log);
     let wallet_infos = {};
     let transactions = [];
     for( let hash in transaction_infos) {
@@ -370,7 +385,7 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
             }
             //nft transfer
             if( log.topicsLength == 1) {
-                //if this transaction is AuctionSuccessful
+                is_price_set = true;
                 from = "0x" + log.topics[1].substr(26);
                 to = "0x" + log.topics[1].substr(90);
                 wallet_infos[from] = wallet_infos[from]?wallet_infos[from]:newWallet();
@@ -383,20 +398,41 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
                 wallet_infos[to].spent += price;
             }
         }
+        if( !is_mint 
+            && !is_ownership_transfer
+            && !is_price_set
+            && !isAuctionSuccessful) {
+            console.log("finding opensea_log", hash);
+            let opensea_log;
+            try {
+                opensea_log = await OpenSeaContractLog.findOne({transactionHash: hash});
+            } catch(err) {
+                console.log(err.message);
+            }
+            if(opensea_log) {
+                console.log("found opensea_log", hash);
+                price = converter.hexToDec(opensea_log.data.substr(130)) / (10 ** 18);
+            } else console.log("not found opensea_log", hash);
+            wallet_infos[from].revenue += price;
+            wallet_infos[to].spent += price;
+        }
         transactions.push({
             hash: logs[0].transactionHash,
-            timeStamp: log[0].timeStamp,
-            block_height: log[0].blockNumber,
-            gas_price: log[0].gasPrice,
-            gas_used: log[0].gasUsed,
+            timeStamp: logs[0].timeStamp,
+            block_height: logs[0].blockNumber,
+            gas_price: logs[0].gasPrice,
+            gas_used: logs[0].gasUsed,
             total: price,
-            fees: converter.hexToDec(log[0].gasPrice)
-                * converter.hexToDec(log[0].gasUsed) / (10 ** 18)
+            fees: converter.hexToDec(logs[0].gasPrice)
+                * converter.hexToDec(logs[0].gasUsed) / (10 ** 18)
         });
     }
     for( const wallet_info of wallet_infos) {
         await addWalletInfoToWatchList( wallet_info);
     }
+    try{
+        TransactionHistory.insertMany(transactions, {ordered: false});
+    } catch(err) {}
     try{
         await NFTCollection.updateOne({contractHash: nft_collection.contractHash}, {lastCheckedBlock: lastBlock});
         console.log("lastBlock:", lastBlock, nft_collection.contractHash);
