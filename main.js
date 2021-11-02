@@ -32,7 +32,7 @@ set_api_keys();
 
 await fetch_latest_blocknumber();
 
-// getNFTCollectionList();
+getNFTCollectionList();
 getLogsByCheckableNFTCollections();
 // getOpenSeaLogs();
 
