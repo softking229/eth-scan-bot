@@ -48,5 +48,5 @@ if( global.deviceNumber == 1) {
     // app.listen(PORT, () => {
     //     console.log(`app listening at http://localhost:${PORT}`)
     // });
-    // getOnchainLatestBlocknumber();
+    getOnchainLatestBlocknumber();
 }
