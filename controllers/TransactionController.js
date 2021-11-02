@@ -443,33 +443,46 @@ export const getDatabaseLatestTimeStamp = async() => {
     }
 }
 
-export const fetch_transaction_value = async(hash, blockNumber, account) => {
+export const fetch_transaction_value = async(hash, blockNumber, accounts) => {
     const API_URL = process.env.API_URL;
     let params = {
         module: 'account',
         action: 'txlist',
-        address: account,
         startblock: blockNumber,
         endblock: blockNumber,
     }
     let tx_list;
-    while(true) {
-        try{
-            console.log("fetching transaction of ", hash, blockNumber, account);
-            params.apikey = await wait_api_call_limit();
-            let result = await axios.get(API_URL, {params}).catch(err => {
-                throw err;
-            });
-            if( result.data.status != "1"
-            && result.data.message != "No records found"){
-                console.log( result.data, hash, blockNumber, account, "calling api in fetch_transaction_value");
-                continue;
+    let index = 0;
+    while( index < accounts.length) {
+        let is_found = false;
+        let account = accounts[index];
+        params.address = account;
+        while(true) {
+            try{
+                console.log("fetching transaction of ", hash, blockNumber, account);
+                params.apikey = await wait_api_call_limit();
+                let result = await axios.get(API_URL, {params}).catch(err => {
+                    throw err;
+                });
+                if( result.data.status != "1"
+                && result.data.message != "No records found"){
+                    console.log( result.data, hash, blockNumber, account, "calling api in fetch_transaction_value");
+                    break;
+                }
+                tx_list = result.data.result;
+                is_found = true;
+                break;
+            } catch(err) {
+                console.log(err.message, "fetching_transaction_value");
             }
-            tx_list = result.data.result;
-            break;
-        } catch(err) {
-            console.log(err.message, "fetching_transaction_value");
         }
+        if( is_found)
+            break;
+        index ++;
+    }
+    if( index == accounts.length) {
+        console.log("no transaction found for ", hash, accounts);
+        return 0;
     }
     const transaction = tx_list.find(element => element.hash == hash);
     let value;

@@ -416,8 +416,11 @@ export const getLogsByNFTCollection = async(nft_collection, params) => {
             //     console.log("found opensea_log", hash);
             //     price = converter.hexToDec(opensea_log.data.substr(130)) / (10 ** 18);
             // } else console.log("not found opensea_log", hash, 1 * converter.hexToDec(logs[logs.length - 1].logIndex) + 1);
-            if( to)
-                price = await fetch_transaction_value(hash, converter.hexToDec(logs[0].blockNumber), to);
+            let accounts = [];
+            if( from) accounts.push(from);
+            if( to) accounts.push(to);
+            if( accounts.length)
+                price = await fetch_transaction_value(hash, converter.hexToDec(logs[0].blockNumber), accounts);
             try {
                 wallet_infos[from].revenue += price;
                 wallet_infos[to].spent += price;
